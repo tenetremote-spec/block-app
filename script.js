@@ -1,6 +1,10 @@
-// RG Support 2 - Stable + Full Language + Block Sort Version
+// RG Support 2 - FULL STABLE VERSION (All Features Integrated)
 
 document.addEventListener("DOMContentLoaded", () => {
+
+  // =======================
+  // Elements
+  // =======================
 
   const addBtn = document.querySelector(".add-btn");
   const input = document.querySelector(".length-input");
@@ -21,11 +25,17 @@ document.addEventListener("DOMContentLoaded", () => {
   const addBlockBtn = document.querySelector(".add-block-btn");
   const blockList = document.querySelector(".block-list");
 
+  const settingsTitle = document.querySelector(".settings-title");
+  const toleranceLabel = document.querySelector(".tolerance-label");
+  const languageLabel = document.querySelector(".language-label");
+  const pinsLabel = document.querySelector(".pins-label");
+  const blocksLabel = document.querySelector(".blocks-label");
+
   const BLOCK_STORAGE_KEY = "rg2_blocks";
 
   let currentLang = localStorage.getItem("rg2_lang") || "ja";
   let lastResults = [];
-  let blockSortDesc = true; // デフォルト降順（既存思想維持）
+  let blockSortDesc = true;
 
   // =======================
   // Language
@@ -37,36 +47,30 @@ document.addEventListener("DOMContentLoaded", () => {
       pin:"ピン",blocks:"ブロック",total:"合計",
       noSolution:"解なし",delete:"削除",
       toleranceDisplay:"許容誤差",
-      settings:"設定",
-      save:"保存",
+      settings:"設定",save:"保存",
       lengthPlaceholder:"寸法を入力",
       blockPlaceholder:"ブロック寸法",
       tolerancePlaceholder:"許容誤差",
-      sort:"ソート"
+      sort:"ソート",
+      toleranceLabel:"許容誤差 (mm)",
+      languageLabel:"言語",
+      pinsLabel:"ピン (50mmピッチ / 固定)",
+      blocksLabel:"ブロック"
     },
     en:{
       add:"Add",clear:"Clear",calculate:"Calculate",
       pin:"Pin",blocks:"Blocks",total:"Total",
       noSolution:"No solution",delete:"Delete",
       toleranceDisplay:"Tolerance",
-      settings:"Settings",
-      save:"Save",
+      settings:"Settings",save:"Save",
       lengthPlaceholder:"Enter length",
       blockPlaceholder:"Block size",
       tolerancePlaceholder:"Tolerance",
-      sort:"Sort"
-    },
-    bn:{
-      add:"যোগ",clear:"মুছুন",calculate:"হিসাব",
-      pin:"পিন",blocks:"ব্লক",total:"মোট",
-      noSolution:"সমাধান নেই",delete:"মুছুন",
-      toleranceDisplay:"সহনশীলতা",
-      settings:"সেটিংস",
-      save:"সংরক্ষণ",
-      lengthPlaceholder:"মাত্রা লিখুন",
-      blockPlaceholder:"ব্লক মাত্রা",
-      tolerancePlaceholder:"সহনশীলতা",
-      sort:"সাজান"
+      sort:"Sort",
+      toleranceLabel:"Tolerance (mm)",
+      languageLabel:"Language",
+      pinsLabel:"Pins (50mm pitch / Fixed)",
+      blocksLabel:"Blocks"
     }
   };
 
@@ -83,11 +87,16 @@ document.addEventListener("DOMContentLoaded", () => {
     blockInput.placeholder = translations[lang].blockPlaceholder;
     toleranceInput.placeholder = translations[lang].tolerancePlaceholder;
 
-    updateToleranceDisplay();
-    languageSelect.value = lang;
+    if(settingsTitle) settingsTitle.textContent = translations[lang].settings;
+    if(toleranceLabel) toleranceLabel.textContent = translations[lang].toleranceLabel;
+    if(languageLabel) languageLabel.textContent = translations[lang].languageLabel;
+    if(pinsLabel) pinsLabel.textContent = translations[lang].pinsLabel;
+    if(blocksLabel) blocksLabel.textContent = translations[lang].blocksLabel;
 
+    updateToleranceDisplay();
     refreshDeleteButtons();
     redrawResults();
+    updateSortButton();
   }
 
   function updateToleranceDisplay(){
@@ -97,7 +106,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   toleranceInput.addEventListener("input", updateToleranceDisplay);
-  applyLanguage(currentLang);
 
   // =======================
   // Settings
@@ -110,10 +118,6 @@ document.addEventListener("DOMContentLoaded", () => {
     modal.classList.add("hidden");
   };
 
-  window.onclick=(e)=>{
-    if(e.target===modal) modal.classList.add("hidden");
-  };
-
   document.addEventListener("keydown",(e)=>{
     if(e.key==="Escape") modal.classList.add("hidden");
   });
@@ -123,11 +127,20 @@ document.addEventListener("DOMContentLoaded", () => {
   // =======================
 
   function saveBlocks(){
-    const blocks=[...document.querySelectorAll(".block-item")].map(i=>({
+    const blocks=[...blockList.children].map(i=>({
       value:parseFloat(i.querySelector(".mono").textContent),
       checked:i.querySelector("input").checked
     }));
     localStorage.setItem(BLOCK_STORAGE_KEY,JSON.stringify(blocks));
+  }
+
+  function loadBlocks(){
+    const saved=localStorage.getItem(BLOCK_STORAGE_KEY);
+    if(!saved) return;
+
+    blockList.innerHTML="";
+    JSON.parse(saved).forEach(b=>createBlockItem(b.value,b.checked));
+    sortBlocksUI();
   }
 
   function createBlockItem(value,checked=true){
@@ -143,16 +156,44 @@ document.addEventListener("DOMContentLoaded", () => {
     blockList.appendChild(div);
   }
 
-  function loadBlocks(){
-    const saved=localStorage.getItem(BLOCK_STORAGE_KEY);
-    if(saved){
-      blockList.innerHTML="";
-      JSON.parse(saved).forEach(b=>createBlockItem(b.value,b.checked));
-      sortBlocksUI();
-    }
+  loadBlocks();
+
+  // =======================
+  // Block Sort
+  // =======================
+
+  const sortBtn = document.createElement("button");
+  sortBtn.className="sort-btn";
+  blockList.parentNode.insertBefore(sortBtn, blockList);
+
+  sortBtn.onclick=()=>{
+    blockSortDesc=!blockSortDesc;
+    sortBlocksUI();
+  };
+
+  function sortBlocksUI(){
+    const items=[...blockList.children];
+
+    items.sort((a,b)=>{
+      const av=parseFloat(a.querySelector(".mono").textContent);
+      const bv=parseFloat(b.querySelector(".mono").textContent);
+      return blockSortDesc?bv-av:av-bv;
+    });
+
+    blockList.innerHTML="";
+    items.forEach(i=>blockList.appendChild(i));
+    saveBlocks();
+    updateSortButton();
   }
 
-  loadBlocks();
+  function updateSortButton(){
+    sortBtn.textContent =
+      translations[currentLang].sort + " : " + (blockSortDesc?"↓":"↑");
+  }
+
+  // =======================
+  // Add Block
+  // =======================
 
   addBlockBtn.onclick=()=>{
     const v=parseFloat(blockInput.value);
@@ -164,38 +205,7 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   // =======================
-  // Block Sort (UIのみ)
-  // =======================
-
-  const sortBtn = document.createElement("button");
-  sortBtn.className="sort-btn";
-  blockList.parentElement.insertBefore(sortBtn,blockList);
-
-  sortBtn.onclick=()=>{
-    blockSortDesc=!blockSortDesc;
-    sortBlocksUI();
-  };
-
-  function sortBlocksUI(){
-    const items=[...document.querySelectorAll(".block-item")];
-
-    items.sort((a,b)=>{
-      const av=parseFloat(a.querySelector(".mono").textContent);
-      const bv=parseFloat(b.querySelector(".mono").textContent);
-      return blockSortDesc?bv-av:av-bv;
-    });
-
-    blockList.innerHTML="";
-    items.forEach(i=>blockList.appendChild(i));
-
-    sortBtn.textContent =
-      translations[currentLang].sort + " : " + (blockSortDesc?"↓":"↑");
-
-    saveBlocks();
-  }
-
-  // =======================
-  // Target UI
+  // Add Target
   // =======================
 
   addBtn.onclick=()=>{
@@ -226,18 +236,19 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   // =======================
-  // Calculation (既存思想維持)
+  // Calculation（核心ロジック）
   // =======================
 
   calcBtn.onclick=()=>{
+
     resultsContainer.innerHTML="";
     lastResults=[];
 
-    const tolerance = parseFloat(toleranceInput.value);
-    const safeTolerance = isNaN(tolerance)?0:tolerance;
+    const tolerance=parseFloat(toleranceInput.value);
+    const safeTolerance=isNaN(tolerance)?0:tolerance;
 
     const targets=getTargets().sort((a,b)=>b-a);
-    const blocks=getActiveBlocks(); // 常に降順で計算
+    const blocks=getActiveBlocks();
 
     let prevPin=3000;
 
@@ -255,21 +266,16 @@ document.addEventListener("DOMContentLoaded", () => {
     redrawResults();
   };
 
-  function redrawResults(){
-    resultsContainer.innerHTML="";
-    lastResults.forEach(r=>displayResult(r));
-  }
-
   function getTargets(){
-    return [...document.querySelectorAll(".target-list li")]
+    return [...targetList.querySelectorAll("li")]
       .map(li=>parseFloat(li.querySelector(".mono").textContent));
   }
 
   function getActiveBlocks(){
-    return [...document.querySelectorAll(".block-item")]
+    return [...blockList.children]
       .filter(i=>i.querySelector("input").checked)
       .map(i=>parseFloat(i.querySelector(".mono").textContent))
-      .sort((a,b)=>b-a); // ← 計算は常に降順
+      .sort((a,b)=>b-a); // 計算は常に降順
   }
 
   function findFast(target,blocks,tolerance,prevPin){
@@ -293,12 +299,16 @@ document.addEventListener("DOMContentLoaded", () => {
         return{
           pin,
           blocks:used,
-          total:pin+sum,
-          diff:Math.abs(pin+sum-target)
+          total:pin+sum
         };
       }
     }
     return null;
+  }
+
+  function redrawResults(){
+    resultsContainer.innerHTML="";
+    lastResults.forEach(displayResult);
   }
 
   function displayResult(result){
@@ -324,5 +334,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     resultsContainer.appendChild(div);
   }
+
+  applyLanguage(currentLang);
 
 });
