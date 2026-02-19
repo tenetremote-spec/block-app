@@ -2,85 +2,168 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>ブロック計算アプリ</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RG Support</title>
+
 <style>
-body { font-family: sans-serif; padding: 20px; }
-button { margin: 5px; }
-input { width: 120px; }
+body {
+  font-family: sans-serif;
+  padding: 20px;
+  font-size: 1.5rem;
+  text-align: center;
+}
+
+h1 {
+  font-size: 2.2rem;
+}
+
+input, button {
+  font-size: 1.5rem;
+  padding: 10px;
+  margin: 10px;
+}
+
+button {
+  border-radius: 10px;
+}
+
+ul {
+  list-style: none;
+  padding: 0;
+}
+
+li {
+  margin: 10px 0;
+}
+
+#settingsScreen {
+  display: none;
+}
+
+.container {
+  max-width: 600px;
+  margin: auto;
+}
 </style>
 </head>
+
 <body>
 
-<h2>ブロック計算アプリ</h2>
+<div class="container">
 
-<input type="number" id="target" placeholder="目標値" min="0" max="9999">
-<button onclick="calculate()">計算</button>
+<h1>RG Support</h1>
 
-<h3>使用数字</h3>
-<input type="number" id="newNumber" min="1" max="9999">
-<button onclick="addNumber()">追加</button>
-<button onclick="sortNumbers()">昇順</button>
+<!-- Main Screen -->
+<div id="mainScreen">
+
+<h2>Target Value</h2>
+<input type="number" id="target" step="0.001" min="0" max="1000" placeholder="Enter target (0 - 1000)">
+<br>
+<button onclick="calculate()">Calculate</button>
+<br>
+<button onclick="openSettings()">Settings</button>
+
+<h2>Result</h2>
+<div id="result"></div>
+
+</div>
+
+<!-- Settings Screen -->
+<div id="settingsScreen">
+
+<h2>Number Settings</h2>
+
+<input type="number" id="newNumber" step="0.001" min="0" max="1000" placeholder="Add number (0 - 1000)">
+<br>
+<button onclick="addNumber()">Add</button>
+<button onclick="sortNumbers()">Sort</button>
+<button onclick="closeSettings()">Back</button>
 
 <ul id="numberList"></ul>
 
-<h3>結果</h3>
-<div id="result"></div>
+</div>
+
+</div>
 
 <script>
-let numbers = JSON.parse(localStorage.getItem("numbers")) || [1,5,10];
+
+let numbers = JSON.parse(localStorage.getItem("numbers")) || [
+  {value:1, enabled:true},
+  {value:5, enabled:true},
+  {value:10, enabled:true}
+];
 
 function save() {
-localStorage.setItem("numbers", JSON.stringify(numbers));
-render();
+  localStorage.setItem("numbers", JSON.stringify(numbers));
+  render();
 }
 
 function render() {
-let list = document.getElementById("numberList");
-list.innerHTML = "";
-numbers.forEach((n,i)=>{
-list.innerHTML += `<li>${n} <button onclick="removeNumber(${i})">削除</button></li>`;
-});
+  let list = document.getElementById("numberList");
+  list.innerHTML = "";
+
+  numbers.forEach((n,i)=>{
+    list.innerHTML += `
+      <li>
+        <input type="checkbox" ${n.enabled ? "checked" : ""} 
+          onchange="toggleNumber(${i})">
+        ${n.value}
+        <button onclick="removeNumber(${i})">Delete</button>
+      </li>`;
+  });
 }
 
 function addNumber() {
-let val = parseInt(document.getElementById("newNumber").value);
-if (!isNaN(val) && val > 0) {
-numbers.push(val);
-save();
-}
+  let val = parseFloat(document.getElementById("newNumber").value);
+  if (!isNaN(val) && val >= 0 && val <= 1000) {
+    numbers.push({value:val, enabled:true});
+    save();
+    document.getElementById("newNumber").value = "";
+  }
 }
 
 function removeNumber(i) {
-numbers.splice(i,1);
-save();
+  numbers.splice(i,1);
+  save();
+}
+
+function toggleNumber(i) {
+  numbers[i].enabled = !numbers[i].enabled;
+  save();
 }
 
 function sortNumbers() {
-numbers.sort((a,b)=>a-b);
-save();
+  numbers.sort((a,b)=>a.value-b.value);
+  save();
 }
 
 function calculate() {
-let target = parseInt(document.getElementById("target").value);
-if (isNaN(target) || target < 0) return;
+  let target = parseFloat(document.getElementById("target").value);
+  if (isNaN(target)) return;
 
-let sum = 0;
-let used = [];
+  let activeNumbers = numbers
+    .filter(n=>n.enabled && n.value <= target)
+    .map(n=>n.value);
 
-for (let n of numbers.sort((a,b)=>b-a)) {
-    while (sum + n <= target) {
-        sum += n;
-        used.push(n);
-    }
+  let sum = activeNumbers.reduce((a,b)=>a+b,0);
+
+  document.getElementById("result").innerText =
+    activeNumbers.join(" + ") + " = " + sum.toFixed(3);
 }
 
-document.getElementById("result").innerText =
-used.join(" + ") + " = " + sum;
+function openSettings() {
+  document.getElementById("mainScreen").style.display = "none";
+  document.getElementById("settingsScreen").style.display = "block";
+}
+
+function closeSettings() {
+  document.getElementById("settingsScreen").style.display = "none";
+  document.getElementById("mainScreen").style.display = "block";
 }
 
 render();
+
 </script>
 
 </body>
 </html>
-
