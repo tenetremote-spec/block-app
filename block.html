@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>ブロック計算アプリ</title>
+<style>
+body { font-family: sans-serif; padding: 20px; }
+button { margin: 5px; }
+input { width: 120px; }
+</style>
+</head>
+<body>
+
+<h2>ブロック計算アプリ</h2>
+
+<input type="number" id="target" placeholder="目標値" min="0" max="9999">
+<button onclick="calculate()">計算</button>
+
+<h3>使用数字</h3>
+<input type="number" id="newNumber" min="1" max="9999">
+<button onclick="addNumber()">追加</button>
+<button onclick="sortNumbers()">昇順</button>
+
+<ul id="numberList"></ul>
+
+<h3>結果</h3>
+<div id="result"></div>
+
+<script>
+let numbers = JSON.parse(localStorage.getItem("numbers")) || [1,5,10];
+
+function save() {
+localStorage.setItem("numbers", JSON.stringify(numbers));
+render();
+}
+
+function render() {
+let list = document.getElementById("numberList");
+list.innerHTML = "";
+numbers.forEach((n,i)=>{
+list.innerHTML += `<li>${n} <button onclick="removeNumber(${i})">削除</button></li>`;
+});
+}
+
+function addNumber() {
+let val = parseInt(document.getElementById("newNumber").value);
+if (!isNaN(val) && val > 0) {
+numbers.push(val);
+save();
+}
+}
+
+function removeNumber(i) {
+numbers.splice(i,1);
+save();
+}
+
+function sortNumbers() {
+numbers.sort((a,b)=>a-b);
+save();
+}
+
+function calculate() {
+let target = parseInt(document.getElementById("target").value);
+if (isNaN(target) || target < 0) return;
+
+let sum = 0;
+let used = [];
+
+for (let n of numbers.sort((a,b)=>b-a)) {
+    while (sum + n <= target) {
+        sum += n;
+        used.push(n);
+    }
+}
+
+document.getElementById("result").innerText =
+used.join(" + ") + " = " + sum;
+}
+
+render();
+</script>
+
+</body>
+</html>
