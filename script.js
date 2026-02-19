@@ -1,4 +1,4 @@
-// RG Support 2 - Stable Full Version
+// RG Support 2 - Stable Full Version with Language Support
 
 // =======================
 // Element references
@@ -17,6 +17,41 @@ const toleranceDisplay = document.querySelector(".tolerance-display");
 const settingsBtn = document.querySelector(".settings-btn");
 const modal = document.querySelector(".modal");
 const saveSettingsBtn = document.querySelector(".save-settings-btn");
+const languageSelect = document.querySelector(".language-select");
+
+// =======================
+// Language System
+// =======================
+
+const translations = {
+  ja: {
+    add: "追加",
+    clear: "全削除",
+    calculate: "計算",
+    tolerance: "許容差",
+    noSolution: "許容範囲内に解なし"
+  },
+  en: {
+    add: "Add",
+    clear: "Clear All",
+    calculate: "Calculate",
+    tolerance: "Tolerance",
+    noSolution: "No solution within tolerance"
+  },
+  bn: {
+    add: "যোগ",
+    clear: "সব মুছুন",
+    calculate: "হিসাব করুন",
+    tolerance: "সহনশীলতা",
+    noSolution: "নির্ধারিত সীমার মধ্যে সমাধান নেই"
+  }
+};
+
+function applyLanguage(lang) {
+  addBtn.textContent = translations[lang].add;
+  clearBtn.textContent = translations[lang].clear;
+  calcBtn.textContent = translations[lang].calculate;
+}
 
 // =======================
 // UI FUNCTIONS
@@ -60,6 +95,9 @@ settingsBtn.addEventListener("click", () => {
 saveSettingsBtn.addEventListener("click", () => {
   const tolerance = parseFloat(toleranceInput.value) || 0.1;
   toleranceDisplay.textContent = `Tolerance : ±${tolerance} mm`;
+
+  const selectedLang = languageSelect.value;
+  applyLanguage(selectedLang);
 
   modal.classList.add("hidden");
 });
@@ -191,7 +229,7 @@ function displayResult(target, result) {
     div.innerHTML = `
       <hr>
       <p><strong>${target} mm</strong></p>
-      <p style="color:red;">No solution within tolerance</p>
+      <p style="color:red;">${translations[languageSelect.value].noSolution}</p>
     `;
   } else {
     div.innerHTML = `
