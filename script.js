@@ -1,4 +1,4 @@
-// RG Support 2 - FINAL STABLE (A Base + Safe Sort + Full Language + Full Calc)
+// RG Support 2 - FINAL COMPLETE STABLE
 
 document.addEventListener("DOMContentLoaded", () => {
 
@@ -30,6 +30,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const languageLabel = document.querySelector(".language-label");
   const pinsLabel = document.querySelector(".pins-label");
   const blocksLabel = document.querySelector(".blocks-label");
+  const resultsTitle = document.querySelector(".results-title");
 
   const BLOCK_STORAGE_KEY = "rg2_blocks";
 
@@ -42,6 +43,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // =======================
 
   const translations = {
+
     ja:{
       add:"追加",clear:"クリア",calculate:"計算",
       pin:"ピン",blocks:"ブロック",total:"合計",
@@ -55,8 +57,10 @@ document.addEventListener("DOMContentLoaded", () => {
       lengthPlaceholder:"寸法を入力",
       blockPlaceholder:"ブロック寸法",
       tolerancePlaceholder:"許容誤差",
-      sort:"ソート"
+      sort:"ソート",
+      result:"結果"
     },
+
     en:{
       add:"Add",clear:"Clear",calculate:"Calculate",
       pin:"Pin",blocks:"Blocks",total:"Total",
@@ -70,11 +74,32 @@ document.addEventListener("DOMContentLoaded", () => {
       lengthPlaceholder:"Enter length",
       blockPlaceholder:"Block size",
       tolerancePlaceholder:"Tolerance",
-      sort:"Sort"
+      sort:"Sort",
+      result:"RESULT"
+    },
+
+    bn:{
+      add:"যোগ",clear:"মুছুন",calculate:"হিসাব",
+      pin:"পিন",blocks:"ব্লক",total:"মোট",
+      noSolution:"সমাধান নেই",delete:"মুছুন",
+      toleranceDisplay:"সহনশীলতা",
+      settings:"সেটিংস",save:"সংরক্ষণ",
+      toleranceLabel:"সহনশীলতা (mm)",
+      languageLabel:"ভাষা",
+      pinsLabel:"পিন (৫০মিমি পিচ / স্থির)",
+      blocksLabel:"ব্লক",
+      lengthPlaceholder:"মাত্রা লিখুন",
+      blockPlaceholder:"ব্লক মাত্রা",
+      tolerancePlaceholder:"সহনশীলতা",
+      sort:"সাজান",
+      result:"ফলাফল"
     }
   };
 
   function applyLanguage(lang){
+
+    if(!translations[lang]) lang="ja";
+
     currentLang = lang;
     localStorage.setItem("rg2_lang", lang);
 
@@ -82,6 +107,7 @@ document.addEventListener("DOMContentLoaded", () => {
     clearBtn.textContent = translations[lang].clear;
     calcBtn.textContent = translations[lang].calculate;
     saveSettingsBtn.textContent = translations[lang].save;
+    addBlockBtn.textContent = translations[lang].add;
 
     input.placeholder = translations[lang].lengthPlaceholder;
     blockInput.placeholder = translations[lang].blockPlaceholder;
@@ -92,6 +118,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if(languageLabel) languageLabel.textContent = translations[lang].languageLabel;
     if(pinsLabel) pinsLabel.textContent = translations[lang].pinsLabel;
     if(blocksLabel) blocksLabel.textContent = translations[lang].blocksLabel;
+    if(resultsTitle) resultsTitle.textContent = translations[lang].result;
 
     updateToleranceDisplay();
     refreshDeleteButtons();
@@ -110,7 +137,7 @@ document.addEventListener("DOMContentLoaded", () => {
   toleranceInput.addEventListener("input", updateToleranceDisplay);
 
   // =======================
-  // Settings (完全復活)
+  // Settings
   // =======================
 
   settingsBtn.onclick = () => modal.classList.remove("hidden");
@@ -165,7 +192,7 @@ document.addEventListener("DOMContentLoaded", () => {
   loadBlocks();
 
   // =======================
-  // Block Sort（UIのみ）
+  // Block Sort
   // =======================
 
   const sortBtn = document.createElement("button");
@@ -200,7 +227,7 @@ document.addEventListener("DOMContentLoaded", () => {
   updateSortButton();
 
   // =======================
-  // Add Block（壊さない構成）
+  // Add Block
   // =======================
 
   addBlockBtn.onclick=()=>{
@@ -213,7 +240,7 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   // =======================
-  // Add Target（完全復活）
+  // Add Target
   // =======================
 
   addBtn.onclick=()=>{
@@ -244,7 +271,7 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   // =======================
-  // Calculation（設計思想維持）
+  // Calculation
   // =======================
 
   calcBtn.onclick=()=>{
