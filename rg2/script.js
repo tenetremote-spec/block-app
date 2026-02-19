@@ -37,8 +37,25 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
+  // ===== State =====
   let currentLang = localStorage.getItem("lang") || "ja";
+  let tolerance = parseFloat(localStorage.getItem("tolerance")) || 0.1;
+  let targets = [];
 
+  // ===== Elements =====
+  const input = document.querySelector(".length-input");
+  const addBtn = document.querySelector(".btn-secondary");
+  const list = document.querySelector(".target-list");
+  const clearBtn = document.querySelector(".btn-danger");
+  const languageSelect = document.querySelector("select");
+  const settingsBtn = document.querySelector(".settings-btn");
+  const modal = document.querySelector(".modal");
+  const saveBtn = document.querySelector(".modal .btn-primary");
+  const toleranceInput = document.querySelector(
+    '.setting-group input[type="number"]'
+  );
+
+  // ===== Apply Language =====
   function applyLanguage(lang) {
     const t = translations[lang];
 
@@ -47,22 +64,21 @@ document.addEventListener("DOMContentLoaded", () => {
     document.querySelector(".btn-primary.full").textContent = t.calculate;
     document.querySelector(".length-input").placeholder = t.placeholder;
     document.querySelector(".modal h2").textContent = t.settings;
-    document.querySelector(".setting-group label").textContent = t.tolerance;
-    document.querySelectorAll(".setting-group label")[2].textContent = t.blocks;
+
+    document.querySelectorAll(".setting-group label")[0].textContent =
+      t.tolerance;
+    document.querySelectorAll(".setting-group label")[2].textContent =
+      t.blocks;
+
     document.querySelector(".modal .btn-primary").textContent = t.save;
 
-    renderList(); // 削除ボタン再描画
+    document.querySelector(".tolerance-display").textContent =
+      `${t.tolerance} : ±${tolerance} mm`;
+
+    renderList();
   }
 
-  // ===== Elements =====
-  const input = document.querySelector(".length-input");
-  const addBtn = document.querySelector(".btn-secondary");
-  const list = document.querySelector(".target-list");
-  const clearBtn = document.querySelector(".btn-danger");
-  const languageSelect = document.querySelector("select");
-
-  let targets = [];
-
+  // ===== Render List =====
   function renderList() {
     list.innerHTML = "";
 
@@ -80,6 +96,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // ===== Add Target =====
   addBtn.addEventListener("click", () => {
     const value = parseFloat(input.value);
     if (!isNaN(value)) {
@@ -89,6 +106,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  // ===== Delete Target =====
   list.addEventListener("click", (e) => {
     if (e.target.classList.contains("delete-btn")) {
       const index = e.target.getAttribute("data-index");
@@ -97,22 +115,28 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  // ===== Clear All =====
   clearBtn.addEventListener("click", () => {
     targets = [];
     renderList();
   });
 
   // ===== Modal Control =====
-  const settingsBtn = document.querySelector(".settings-btn");
-  const modal = document.querySelector(".modal");
-  const saveBtn = document.querySelector(".modal .btn-primary");
-
   settingsBtn.addEventListener("click", () => {
     modal.classList.remove("hidden");
   });
 
   saveBtn.addEventListener("click", () => {
+
+    const newTolerance = parseFloat(toleranceInput.value);
+
+    if (!isNaN(newTolerance)) {
+      tolerance = newTolerance;
+      localStorage.setItem("tolerance", tolerance);
+    }
+
     modal.classList.add("hidden");
+    applyLanguage(currentLang);
   });
 
   modal.addEventListener("click", (e) => {
@@ -123,6 +147,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ===== Language Switch =====
   languageSelect.value = currentLang;
+  toleranceInput.value = tolerance;
   applyLanguage(currentLang);
 
   languageSelect.addEventListener("change", (e) => {
