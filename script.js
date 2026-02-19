@@ -1,6 +1,6 @@
 // RG Support 2 - FINAL COMPLETE STABLE
 
-const APP_VERSION = "rgsp ver2.0.0";
+const APP_VERSION = "rgsp ver2.0.1";
 
 document.addEventListener("DOMContentLoaded", () => {
 
@@ -40,131 +40,68 @@ document.addEventListener("DOMContentLoaded", () => {
   let lastResults = [];
   let blockSortDesc = true;
 
-  // ★ 許容誤差 初期値を0に固定
   toleranceInput.value = "0";
 
   // =======================
-  // Language
+  // Language（変更なし）
   // =======================
 
-  const translations = {
-
-    ja:{
-      add:"追加",clear:"クリア",calculate:"計算",
-      pin:"ピン",blocks:"ブロック",total:"合計",
-      noSolution:"解なし",delete:"削除",
-      toleranceDisplay:"許容誤差",
-      settings:"設定",save:"保存",
-      toleranceLabel:"許容誤差 (mm)",
-      languageLabel:"言語",
-      pinsLabel:"ピン (50mmピッチ / 固定)",
-      blocksLabel:"ブロック",
-      lengthPlaceholder:"寸法を入力",
-      blockPlaceholder:"ブロック寸法",
-      tolerancePlaceholder:"許容誤差",
-      sort:"ソート",
-      result:"結果"
-    },
-
-    en:{
-      add:"Add",clear:"Clear",calculate:"Calculate",
-      pin:"Pin",blocks:"Blocks",total:"Total",
-      noSolution:"No solution",delete:"Delete",
-      toleranceDisplay:"Tolerance",
-      settings:"Settings",save:"Save",
-      toleranceLabel:"Tolerance (mm)",
-      languageLabel:"Language",
-      pinsLabel:"Pins (50mm pitch / Fixed)",
-      blocksLabel:"Blocks",
-      lengthPlaceholder:"Enter length",
-      blockPlaceholder:"Block size",
-      tolerancePlaceholder:"Tolerance",
-      sort:"Sort",
-      result:"RESULT"
-    },
-
-    bn:{
-      add:"যোগ",clear:"মুছুন",calculate:"হিসাব",
-      pin:"পিন",blocks:"ব্লক",total:"মোট",
-      noSolution:"সমাধান নেই",delete:"মুছুন",
-      toleranceDisplay:"সহনশীলতা",
-      settings:"সেটিংস",save:"সংরক্ষণ",
-      toleranceLabel:"সহনশীলতা (mm)",
-      languageLabel:"ভাষা",
-      pinsLabel:"পিন (৫০মিমি পিচ / স্থির)",
-      blocksLabel:"ব্লক",
-      lengthPlaceholder:"মাত্রা লিখুন",
-      blockPlaceholder:"ব্লক মাত্রা",
-      tolerancePlaceholder:"সহনশীলতা",
-      sort:"সাজান",
-      result:"ফলাফল"
-    }
+  const translations = { /* --- ここは元コードそのまま --- */ 
+    ja:{add:"追加",clear:"クリア",calculate:"計算",pin:"ピン",blocks:"ブロック",total:"合計",
+    noSolution:"解なし",delete:"削除",toleranceDisplay:"許容誤差",settings:"設定",save:"保存",
+    toleranceLabel:"許容誤差 (mm)",languageLabel:"言語",pinsLabel:"ピン (50mmピッチ / 固定)",
+    blocksLabel:"ブロック",lengthPlaceholder:"寸法を入力",blockPlaceholder:"ブロック寸法",
+    tolerancePlaceholder:"許容誤差",sort:"ソート",result:"結果"},
+    en:{add:"Add",clear:"Clear",calculate:"Calculate",pin:"Pin",blocks:"Blocks",total:"Total",
+    noSolution:"No solution",delete:"Delete",toleranceDisplay:"Tolerance",settings:"Settings",
+    save:"Save",toleranceLabel:"Tolerance (mm)",languageLabel:"Language",
+    pinsLabel:"Pins (50mm pitch / Fixed)",blocksLabel:"Blocks",
+    lengthPlaceholder:"Enter length",blockPlaceholder:"Block size",
+    tolerancePlaceholder:"Tolerance",sort:"Sort",result:"RESULT"},
+    bn:{add:"যোগ",clear:"মুছুন",calculate:"হিসাব",pin:"পিন",blocks:"ব্লক",total:"মোট",
+    noSolution:"সমাধান নেই",delete:"মুছুন",toleranceDisplay:"সহনশীলতা",
+    settings:"সেটিংস",save:"সংরক্ষণ",toleranceLabel:"সহনশীলতা (mm)",
+    languageLabel:"ভাষা",pinsLabel:"পিন (৫০মিমি পিচ / স্থির)",blocksLabel:"ব্লক",
+    lengthPlaceholder:"মাত্রা লিখুন",blockPlaceholder:"ব্লক মাত্রা",
+    tolerancePlaceholder:"সহনশীলতা",sort:"সাজান",result:"ফলাফল"}
   };
 
-  function applyLanguage(lang){
-
-    if(!translations[lang]) lang="ja";
-
-    currentLang = lang;
-    localStorage.setItem("rg2_lang", lang);
-
-    addBtn.textContent = translations[lang].add;
-    clearBtn.textContent = translations[lang].clear;
-    calcBtn.textContent = translations[lang].calculate;
-    saveSettingsBtn.textContent = translations[lang].save;
-    addBlockBtn.textContent = translations[lang].add;
-
-    input.placeholder = translations[lang].lengthPlaceholder;
-    blockInput.placeholder = translations[lang].blockPlaceholder;
-    toleranceInput.placeholder = translations[lang].tolerancePlaceholder;
-
-    if(settingsTitle) settingsTitle.textContent = translations[lang].settings;
-    if(toleranceLabel) toleranceLabel.textContent = translations[lang].toleranceLabel;
-    if(languageLabel) languageLabel.textContent = translations[lang].languageLabel;
-    if(pinsLabel) pinsLabel.textContent = translations[lang].pinsLabel;
-    if(blocksLabel) blocksLabel.textContent = translations[lang].blocksLabel;
-    if(resultsTitle) resultsTitle.textContent = translations[lang].result;
-
-    updateToleranceDisplay();
-    refreshDeleteButtons();
-    redrawResults();
-    updateSortButton();
-
-    languageSelect.value = lang;
+  function applyLanguage(lang){ if(!translations[lang]) lang="ja";
+    currentLang=lang; localStorage.setItem("rg2_lang",lang);
+    addBtn.textContent=translations[lang].add;
+    clearBtn.textContent=translations[lang].clear;
+    calcBtn.textContent=translations[lang].calculate;
+    saveSettingsBtn.textContent=translations[lang].save;
+    addBlockBtn.textContent=translations[lang].add;
+    input.placeholder=translations[lang].lengthPlaceholder;
+    blockInput.placeholder=translations[lang].blockPlaceholder;
+    toleranceInput.placeholder=translations[lang].tolerancePlaceholder;
+    if(settingsTitle) settingsTitle.textContent=translations[lang].settings;
+    if(toleranceLabel) toleranceLabel.textContent=translations[lang].toleranceLabel;
+    if(languageLabel) languageLabel.textContent=translations[lang].languageLabel;
+    if(pinsLabel) pinsLabel.textContent=translations[lang].pinsLabel;
+    if(blocksLabel) blocksLabel.textContent=translations[lang].blocksLabel;
+    if(resultsTitle) resultsTitle.textContent=translations[lang].result;
+    updateToleranceDisplay(); refreshDeleteButtons(); redrawResults(); updateSortButton();
+    languageSelect.value=lang;
   }
 
   function updateToleranceDisplay(){
-    const val = toleranceInput.value === "" ? "0" : toleranceInput.value;
-    toleranceDisplay.textContent =
+    const val=toleranceInput.value===""?"0":toleranceInput.value;
+    toleranceDisplay.textContent=
       `${translations[currentLang].toleranceDisplay} : ±${val} mm`;
   }
 
-  toleranceInput.addEventListener("input", updateToleranceDisplay);
+  toleranceInput.addEventListener("input",updateToleranceDisplay);
 
   // =======================
-  // Settings
+  // 既存UIロジック（変更なし）
   // =======================
 
-  settingsBtn.onclick = () => modal.classList.remove("hidden");
-
-  saveSettingsBtn.onclick = () => {
-    applyLanguage(languageSelect.value);
-    modal.classList.add("hidden");
-  };
-
-  window.addEventListener("click", (e)=>{
-    if(e.target === modal){
-      modal.classList.add("hidden");
-    }
-  });
-
-  document.addEventListener("keydown",(e)=>{
-    if(e.key==="Escape") modal.classList.add("hidden");
-  });
-
-  // =======================
-  // Block Persistence
-  // =======================
+  settingsBtn.onclick=()=>modal.classList.remove("hidden");
+  saveSettingsBtn.onclick=()=>{applyLanguage(languageSelect.value);modal.classList.add("hidden");};
+  window.addEventListener("click",(e)=>{if(e.target===modal)modal.classList.add("hidden");});
+  document.addEventListener("keydown",(e)=>{if(e.key==="Escape")modal.classList.add("hidden");});
 
   function saveBlocks(){
     const blocks=[...blockList.children].map(i=>({
@@ -180,8 +117,7 @@ document.addEventListener("DOMContentLoaded", () => {
     div.innerHTML=`
       <span class="mono">${value}</span>
       <input type="checkbox" ${checked?"checked":""}>
-      <button class="delete-btn small">✕</button>
-    `;
+      <button class="delete-btn small">✕</button>`;
     div.querySelector(".delete-btn").onclick=()=>{div.remove();saveBlocks();};
     div.querySelector("input").onchange=saveBlocks;
     blockList.appendChild(div);
@@ -189,84 +125,55 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function loadBlocks(){
     const saved=localStorage.getItem(BLOCK_STORAGE_KEY);
-    if(!saved) return;
+    if(!saved)return;
     blockList.innerHTML="";
     JSON.parse(saved).forEach(b=>createBlockItem(b.value,b.checked));
   }
-
   loadBlocks();
 
-  // =======================
-  // Block Sort
-  // =======================
-
-  const sortBtn = document.createElement("button");
+  const sortBtn=document.createElement("button");
   sortBtn.className="sort-btn";
-  blockList.parentNode.insertBefore(sortBtn, blockList);
-
-  sortBtn.onclick=()=>{
-    blockSortDesc = !blockSortDesc;
-    sortBlocksUI();
-  };
+  blockList.parentNode.insertBefore(sortBtn,blockList);
+  sortBtn.onclick=()=>{blockSortDesc=!blockSortDesc;sortBlocksUI();};
 
   function sortBlocksUI(){
     const items=[...blockList.children];
-
     items.sort((a,b)=>{
       const av=parseFloat(a.querySelector(".mono").textContent);
       const bv=parseFloat(b.querySelector(".mono").textContent);
       return blockSortDesc?bv-av:av-bv;
     });
-
-    blockList.innerHTML="";
-    items.forEach(i=>blockList.appendChild(i));
-    saveBlocks();
-    updateSortButton();
+    blockList.innerHTML=""; items.forEach(i=>blockList.appendChild(i));
+    saveBlocks(); updateSortButton();
   }
 
   function updateSortButton(){
-    sortBtn.textContent =
-      translations[currentLang].sort + " : " + (blockSortDesc?"↓":"↑");
+    sortBtn.textContent=
+      translations[currentLang].sort+" : "+(blockSortDesc?"↓":"↑");
   }
-
   updateSortButton();
-
-  // =======================
-  // Add Block
-  // =======================
 
   addBlockBtn.onclick=()=>{
     const v=parseFloat(blockInput.value);
     if(isNaN(v))return;
     createBlockItem(v,true);
-    blockInput.value="";
-    saveBlocks();
-    sortBlocksUI();
+    blockInput.value=""; saveBlocks(); sortBlocksUI();
   };
-
-  // =======================
-  // Add Target
-  // =======================
 
   addBtn.onclick=()=>{
     const v=parseFloat(input.value);
     if(isNaN(v))return;
-
     const li=document.createElement("li");
     li.innerHTML=`
       <span class="mono">${v.toFixed(1)}</span>
-      <button class="delete-btn">${translations[currentLang].delete}</button>
-    `;
+      <button class="delete-btn">${translations[currentLang].delete}</button>`;
     li.querySelector(".delete-btn").onclick=()=>li.remove();
-
-    targetList.appendChild(li);
-    input.value="";
+    targetList.appendChild(li); input.value="";
   };
 
   function refreshDeleteButtons(){
-    document.querySelectorAll(".target-list .delete-btn").forEach(btn=>{
-      btn.textContent=translations[currentLang].delete;
-    });
+    document.querySelectorAll(".target-list .delete-btn")
+      .forEach(btn=>btn.textContent=translations[currentLang].delete);
   }
 
   clearBtn.onclick=()=>{
@@ -276,7 +183,7 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   // =======================
-  // Calculation（変更なし）
+  // ★ 新アルゴリズム（段取り最小）
   // =======================
 
   calcBtn.onclick=()=>{
@@ -291,12 +198,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const blocks=getActiveBlocks();
 
     let prevPin=3000;
+    let prevBlocks=[];
 
     targets.forEach(target=>{
-      const result=findFast(target,blocks,safeTolerance,prevPin);
+
+      const result=findMinSetup(target,blocks,safeTolerance,prevPin,prevBlocks);
 
       if(result){
         prevPin=result.pin;
+        prevBlocks=result.blocks.slice();
         lastResults.push({target,...result});
       }else{
         lastResults.push({target,noSolution:true});
@@ -318,32 +228,48 @@ document.addEventListener("DOMContentLoaded", () => {
       .sort((a,b)=>b-a);
   }
 
-  function findFast(target,blocks,tolerance,prevPin){
+  function countDiff(a,b){
+    const ca={},cb={};
+    a.forEach(v=>ca[v]=(ca[v]||0)+1);
+    b.forEach(v=>cb[v]=(cb[v]||0)+1);
+    const keys=new Set([...Object.keys(ca),...Object.keys(cb)]);
+    let diff=0;
+    keys.forEach(k=>{
+      diff+=Math.abs((ca[k]||0)-(cb[k]||0));
+    });
+    return diff;
+  }
+
+  function findMinSetup(target,blocks,tolerance,prevPin,prevBlocks){
+
+    let best=null;
 
     for(let pin=prevPin;pin>=0;pin-=50){
 
       if(pin>target)continue;
 
-      let remainder=target-pin;
-      let sum=0;
-      let used=[];
+      const remainder=target-pin;
 
-      for(let b of blocks){
-        while(sum+b<=remainder+tolerance){
-          sum+=b;
-          used.push(b);
+      function dfs(sum,combo,start){
+        if(Math.abs(sum-remainder)<=tolerance){
+          const diff=countDiff(combo,prevBlocks);
+          if(!best||diff<best.diff){
+            best={pin,blocks:combo.slice(),total:pin+sum,diff};
+          }
+        }
+        if(sum>remainder+tolerance)return;
+
+        for(let i=start;i<blocks.length;i++){
+          combo.push(blocks[i]);
+          dfs(sum+blocks[i],combo,i);
+          combo.pop();
         }
       }
 
-      if(Math.abs(sum-remainder)<=tolerance){
-        return{
-          pin,
-          blocks:used,
-          total:pin+sum
-        };
-      }
+      dfs(0,[],0);
     }
-    return null;
+
+    return best;
   }
 
   function redrawResults(){
@@ -360,16 +286,14 @@ document.addEventListener("DOMContentLoaded", () => {
       div.innerHTML=`
         <hr>
         <p><strong>${result.target} mm</strong></p>
-        <p style="color:red;">${translations[currentLang].noSolution}</p>
-      `;
+        <p style="color:red;">${translations[currentLang].noSolution}</p>`;
     }else{
       div.innerHTML=`
         <hr>
         <p><strong>${result.target} mm</strong></p>
         <p>${translations[currentLang].pin} : ${result.pin}</p>
         <p>${translations[currentLang].blocks} : ${result.blocks.join(" + ")}</p>
-        <p><strong>${translations[currentLang].total} : ${result.total.toFixed(3)} mm</strong></p>
-      `;
+        <p><strong>${translations[currentLang].total} : ${result.total.toFixed(3)} mm</strong></p>`;
     }
 
     resultsContainer.appendChild(div);
@@ -377,18 +301,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
   applyLanguage(currentLang);
 
-  // =======================
-  // ★ Version Display 追加
-  // =======================
-
-  const versionTag = document.createElement("div");
-  versionTag.style.position = "fixed";
-  versionTag.style.bottom = "5px";
-  versionTag.style.right = "10px";
-  versionTag.style.fontSize = "11px";
-  versionTag.style.opacity = "0.6";
-  versionTag.style.pointerEvents = "none";
-  versionTag.textContent = APP_VERSION;
+  const versionTag=document.createElement("div");
+  versionTag.style.position="fixed";
+  versionTag.style.bottom="5px";
+  versionTag.style.right="10px";
+  versionTag.style.fontSize="11px";
+  versionTag.style.opacity="0.6";
+  versionTag.style.pointerEvents="none";
+  versionTag.textContent=APP_VERSION;
   document.body.appendChild(versionTag);
 
 });
