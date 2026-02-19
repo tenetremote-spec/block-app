@@ -1,0 +1,155 @@
+body {
+  margin: 0;
+  font-family: "Noto Sans JP", "Noto Sans Bengali", "Noto Sans", sans-serif;
+  background: #F4F6F8;
+  color: #222;
+}
+
+/* HEADER */
+.app-header {
+  background: #3A3F44;
+  color: white;
+  padding: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.app-header h1 {
+  margin: 0;
+  font-size: 24px;
+}
+
+.tolerance-display {
+  font-size: 14px;
+  color: #DDD;
+}
+
+.settings-btn {
+  font-size: 20px;
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+}
+
+/* CONTAINER */
+.container {
+  max-width: 600px;
+  margin: auto;
+  padding: 16px;
+}
+
+/* CARD */
+.card {
+  background: white;
+  padding: 16px;
+  margin-bottom: 16px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+/* INPUT */
+.input-section {
+  display: flex;
+  gap: 8px;
+}
+
+.length-input {
+  flex: 1;
+  padding: 12px;
+  font-size: 18px;
+  border: 1px solid #CCC;
+  border-radius: 6px;
+}
+
+/* LIST */
+.target-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.target-list li {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid #D0D5DA;
+}
+
+.mono {
+  font-family: "Noto Sans Mono", monospace;
+}
+
+/* BUTTONS */
+.btn {
+  padding: 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.full {
+  width: 100%;
+  margin-top: 12px;
+}
+
+.small {
+  padding: 6px 10px;
+  font-size: 14px;
+}
+
+.btn-primary {
+  background: #2E7D32;
+  color: white;
+}
+
+.btn-secondary {
+  background: #D0D5DA;
+}
+
+.btn-danger {
+  background: #D9534F;
+  color: white;
+}
+
+.delete-btn {
+  background: none;
+  border: none;
+  color: #D9534F;
+  cursor: pointer;
+}
+
+/* MODAL */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.hidden {
+  display: none;
+}
+
+.modal-content {
+  background: white;
+  padding: 24px;
+  width: 90%;
+  max-width: 500px;
+  border-radius: 8px;
+}
+
+.setting-group {
+  margin-bottom: 20px;
+}
+
+.block-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
