@@ -13,9 +13,7 @@ body {
   text-align: center;
 }
 
-h1 {
-  font-size: 2.2rem;
-}
+h1 { font-size: 2.2rem; }
 
 input, button {
   font-size: 1.5rem;
@@ -23,22 +21,12 @@ input, button {
   margin: 10px;
 }
 
-button {
-  border-radius: 10px;
-}
+button { border-radius: 10px; }
 
-ul {
-  list-style: none;
-  padding: 0;
-}
+ul { list-style: none; padding: 0; }
+li { margin: 10px 0; }
 
-li {
-  margin: 10px 0;
-}
-
-#settingsScreen {
-  display: none;
-}
+#settingsScreen { display: none; }
 
 .container {
   max-width: 600px;
@@ -57,8 +45,15 @@ li {
 <div id="mainScreen">
 
 <h2>Target Value</h2>
-<input type="number" id="target" step="0.001" min="0" max="1000" placeholder="Enter target (0 - 1000)">
+<input type="number" id="target" step="0.001" min="0" max="1000"
+ placeholder="Enter target (0 - 1000)">
 <br>
+
+<h2>Tolerance</h2>
+<input type="number" id="tolerance" step="0.001" min="0"
+ placeholder="Allowed error (e.g. 0.01)">
+<br>
+
 <button onclick="calculate()">Calculate</button>
 <br>
 <button onclick="openSettings()">Settings</button>
@@ -73,8 +68,11 @@ li {
 
 <h2>Number Settings</h2>
 
-<input type="number" id="newNumber" step="0.001" min="0" max="1000" placeholder="Add number (0 - 1000)">
+<input type="number" id="newNumber"
+ step="0.001" min="0" max="1000"
+ placeholder="Add number (0 - 1000)">
 <br>
+
 <button onclick="addNumber()">Add</button>
 <button onclick="sortNumbers()">Sort</button>
 <button onclick="closeSettings()">Back</button>
@@ -105,7 +103,7 @@ function render() {
   numbers.forEach((n,i)=>{
     list.innerHTML += `
       <li>
-        <input type="checkbox" ${n.enabled ? "checked" : ""} 
+        <input type="checkbox" ${n.enabled ? "checked" : ""}
           onchange="toggleNumber(${i})">
         ${n.value}
         <button onclick="removeNumber(${i})">Delete</button>
@@ -138,7 +136,10 @@ function sortNumbers() {
 }
 
 function calculate() {
+
   let target = parseFloat(document.getElementById("target").value);
+  let tolerance = parseFloat(document.getElementById("tolerance").value) || 0;
+
   if (isNaN(target)) return;
 
   let activeNumbers = numbers
@@ -146,9 +147,20 @@ function calculate() {
     .map(n=>n.value);
 
   let sum = activeNumbers.reduce((a,b)=>a+b,0);
+  let difference = Math.abs(target - sum);
 
-  document.getElementById("result").innerText =
-    activeNumbers.join(" + ") + " = " + sum.toFixed(3);
+  let message = activeNumbers.join(" + ") +
+    " = " + sum.toFixed(3);
+
+  if (difference <= tolerance) {
+    message += " ✔ Within Tolerance";
+  } else {
+    message += " ✖ Outside Tolerance";
+  }
+
+  message += " (Diff: " + difference.toFixed(3) + ")";
+
+  document.getElementById("result").innerText = message;
 }
 
 function openSettings() {
