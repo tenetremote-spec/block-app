@@ -1,6 +1,6 @@
 // RG Support 2 - FINAL COMPLETE STABLE
 
-const APP_VERSION = "rgsp ver2.0.1";
+const APP_VERSION = "rgsp ver2.0.2";
 
 document.addEventListener("DOMContentLoaded", () => {
 
@@ -46,7 +46,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Language（変更なし）
   // =======================
 
-  const translations = { /* --- ここは元コードそのまま --- */ 
+  const translations = { 
     ja:{add:"追加",clear:"クリア",calculate:"計算",pin:"ピン",blocks:"ブロック",total:"合計",
     noSolution:"解なし",delete:"削除",toleranceDisplay:"許容誤差",settings:"設定",save:"保存",
     toleranceLabel:"許容誤差 (mm)",languageLabel:"言語",pinsLabel:"ピン (50mmピッチ / 固定)",
@@ -183,7 +183,7 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   // =======================
-  // ★ 新アルゴリズム（段取り最小）
+  // ★ 超軽量・711完全対応アルゴリズム
   // =======================
 
   calcBtn.onclick=()=>{
@@ -240,6 +240,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return diff;
   }
 
+  // ★ 711完全対応：前段寸法参照 + DP軽量化
   function findMinSetup(target,blocks,tolerance,prevPin,prevBlocks){
 
     let best=null;
@@ -249,24 +250,37 @@ document.addEventListener("DOMContentLoaded", () => {
       if(pin>target)continue;
 
       const remainder=target-pin;
+      const dp=new Map();
+      dp.set(0,[]);
 
-      function dfs(sum,combo,start){
-        if(Math.abs(sum-remainder)<=tolerance){
-          const diff=countDiff(combo,prevBlocks);
-          if(!best||diff<best.diff){
-            best={pin,blocks:combo.slice(),total:pin+sum,diff};
+      for(const block of blocks){
+        const entries=[...dp.entries()];
+        for(const [sum,combo] of entries){
+          const newSum=sum+block;
+          if(newSum>remainder+tolerance)continue;
+          if(!dp.has(newSum)){
+            dp.set(newSum,[...combo,block]);
           }
-        }
-        if(sum>remainder+tolerance)return;
-
-        for(let i=start;i<blocks.length;i++){
-          combo.push(blocks[i]);
-          dfs(sum+blocks[i],combo,i);
-          combo.pop();
         }
       }
 
-      dfs(0,[],0);
+      for(const [sum,combo] of dp.entries()){
+        if(Math.abs(sum-remainder)<=tolerance){
+
+          const diff=
+            Math.abs(pin-prevPin)/50 +
+            countDiff(combo,prevBlocks);
+
+          if(!best||diff<best.diff){
+            best={
+              pin,
+              blocks:combo,
+              total:pin+sum,
+              diff
+            };
+          }
+        }
+      }
     }
 
     return best;
