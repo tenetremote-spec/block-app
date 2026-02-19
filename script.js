@@ -1,159 +1,122 @@
-document.addEventListener("DOMContentLoaded", () => {
+// RG Support 2 - Basic Calculation Engine
 
-  // ===== Translation Data =====
-  const translations = {
-    ja: {
-      add: "追加",
-      delete: "削除",
-      clear: "全削除",
-      calculate: "計算",
-      settings: "設定",
-      tolerance: "許容差",
-      blocks: "ブロック",
-      save: "保存",
-      placeholder: "長さを入力 (mm)"
-    },
-    en: {
-      add: "Add",
-      delete: "Delete",
-      clear: "Clear All",
-      calculate: "Calculate",
-      settings: "Settings",
-      tolerance: "Tolerance",
-      blocks: "Blocks",
-      save: "Save",
-      placeholder: "Enter length (mm)"
-    },
-    bn: {
-      add: "যোগ",
-      delete: "মুছুন",
-      clear: "সব মুছুন",
-      calculate: "গণনা",
-      settings: "সেটিংস",
-      tolerance: "টলারেন্স",
-      blocks: "ব্লক",
-      save: "সংরক্ষণ",
-      placeholder: "দৈর্ঘ্য লিখুন (mm)"
-    }
-  };
+const calcBtn = document.querySelector(".calc-btn");
+const resultsContainer = document.querySelector(".results-container");
+const toleranceInput = document.querySelector(".tolerance-input");
 
-  // ===== State =====
-  let currentLang = localStorage.getItem("lang") || "ja";
-  let tolerance = parseFloat(localStorage.getItem("tolerance")) || 0.1;
-  let targets = [];
+calcBtn.addEventListener("click", () => {
+  const targets = getTargets();
+  const tolerance = parseFloat(toleranceInput.value) || 0.1;
 
-  // ===== Elements =====
-  const input = document.querySelector(".length-input");
-  const addBtn = document.querySelector(".btn-secondary");
-  const list = document.querySelector(".target-list");
-  const clearBtn = document.querySelector(".btn-danger");
-  const languageSelect = document.querySelector("select");
-  const settingsBtn = document.querySelector(".settings-btn");
-  const modal = document.querySelector(".modal");
-  const saveBtn = document.querySelector(".modal .btn-primary");
-  const toleranceInput = document.querySelector(
-    '.setting-group input[type="number"]'
-  );
+  resultsContainer.innerHTML = "";
 
-  // ===== Apply Language =====
-  function applyLanguage(lang) {
-    const t = translations[lang];
-
-    document.querySelector(".btn-secondary").textContent = t.add;
-    document.querySelector(".btn-danger").textContent = t.clear;
-    document.querySelector(".btn-primary.full").textContent = t.calculate;
-    document.querySelector(".length-input").placeholder = t.placeholder;
-    document.querySelector(".modal h2").textContent = t.settings;
-
-    document.querySelectorAll(".setting-group label")[0].textContent =
-      t.tolerance;
-    document.querySelectorAll(".setting-group label")[2].textContent =
-      t.blocks;
-
-    document.querySelector(".modal .btn-primary").textContent = t.save;
-
-    document.querySelector(".tolerance-display").textContent =
-      `${t.tolerance} : ±${tolerance} mm`;
-
-    renderList();
-  }
-
-  // ===== Render List =====
-  function renderList() {
-    list.innerHTML = "";
-
-    targets.forEach((value, index) => {
-      const li = document.createElement("li");
-
-      li.innerHTML = `
-        <span class="mono">${value.toFixed(1)} mm</span>
-        <button class="delete-btn" data-index="${index}">
-          ${translations[currentLang].delete}
-        </button>
-      `;
-
-      list.appendChild(li);
-    });
-  }
-
-  // ===== Add Target =====
-  addBtn.addEventListener("click", () => {
-    const value = parseFloat(input.value);
-    if (!isNaN(value)) {
-      targets.push(value);
-      input.value = "";
-      renderList();
-    }
+  targets.forEach(target => {
+    const result = calculateCombination(target, tolerance);
+    displayResult(target, result);
   });
-
-  // ===== Delete Target =====
-  list.addEventListener("click", (e) => {
-    if (e.target.classList.contains("delete-btn")) {
-      const index = e.target.getAttribute("data-index");
-      targets.splice(index, 1);
-      renderList();
-    }
-  });
-
-  // ===== Clear All =====
-  clearBtn.addEventListener("click", () => {
-    targets = [];
-    renderList();
-  });
-
-  // ===== Modal Control =====
-  settingsBtn.addEventListener("click", () => {
-    modal.classList.remove("hidden");
-  });
-
-  saveBtn.addEventListener("click", () => {
-
-    const newTolerance = parseFloat(toleranceInput.value);
-
-    if (!isNaN(newTolerance)) {
-      tolerance = newTolerance;
-      localStorage.setItem("tolerance", tolerance);
-    }
-
-    modal.classList.add("hidden");
-    applyLanguage(currentLang);
-  });
-
-  modal.addEventListener("click", (e) => {
-    if (e.target === modal) {
-      modal.classList.add("hidden");
-    }
-  });
-
-  // ===== Language Switch =====
-  languageSelect.value = currentLang;
-  toleranceInput.value = tolerance;
-  applyLanguage(currentLang);
-
-  languageSelect.addEventListener("change", (e) => {
-    currentLang = e.target.value;
-    localStorage.setItem("lang", currentLang);
-    applyLanguage(currentLang);
-  });
-
 });
+
+function getTargets() {
+  const items = document.querySelectorAll(".target-list li");
+  return Array.from(items).map(li =>
+    parseFloat(li.querySelector(".mono").textContent)
+  );
+}
+
+function getActiveBlocks() {
+  const blockItems = document.querySelectorAll(".block-item");
+  return Array.from(blockItems)
+    .filter(item => item.querySelector("input").checked)
+    .map(item => parseFloat(item.querySelector(".mono").textContent))
+    .sort((a, b) => b - a);
+}
+
+function calculateCombination(target, tolerance) {
+  const pins = [];
+  for (let i = 3000; i >= 0; i -= 50) {
+    pins.push(i);
+  }
+
+  const blocks = getActiveBlocks();
+  let bestResult = null;
+
+  for (let pin of pins) {
+    if (pin > target) continue;
+
+    const remainder = target - pin;
+
+    const blockResult = searchBlocks(remainder, blocks, tolerance);
+
+    if (blockResult) {
+      const total = pin + blockResult.sum;
+      const diff = Math.abs(total - target);
+
+      if (!bestResult || diff < bestResult.diff) {
+        bestResult = {
+          pin,
+          blocks: blockResult.blocks,
+          total,
+          diff
+        };
+      }
+
+      if (diff === 0) break; // perfect match
+    }
+  }
+
+  return bestResult;
+}
+
+function searchBlocks(target, blocks, tolerance) {
+  let best = null;
+
+  function dfs(currentSum, usedBlocks, startIndex) {
+    const diff = Math.abs(currentSum - target);
+
+    if (diff <= tolerance) {
+      if (!best || diff < best.diff || usedBlocks.length < best.blocks.length) {
+        best = {
+          sum: currentSum,
+          blocks: [...usedBlocks],
+          diff
+        };
+      }
+    }
+
+    if (usedBlocks.length >= 10) return;
+    if (currentSum > target + tolerance) return;
+
+    for (let i = startIndex; i < blocks.length; i++) {
+      usedBlocks.push(blocks[i]);
+      dfs(currentSum + blocks[i], usedBlocks, i);
+      usedBlocks.pop();
+    }
+  }
+
+  dfs(0, [], 0);
+
+  return best;
+}
+
+function displayResult(target, result) {
+  const div = document.createElement("div");
+  div.className = "result-item";
+
+  if (!result) {
+    div.innerHTML = `
+      <hr>
+      <p><strong>${target} mm</strong></p>
+      <p style="color:red;">No solution within tolerance</p>
+    `;
+  } else {
+    div.innerHTML = `
+      <hr>
+      <p><strong>${target} mm</strong></p>
+      <p style="color:#1565c0;">Pin : ${result.pin}</p>
+      <p style="color:#ef6c00;">Blocks : ${result.blocks.join(" + ")}</p>
+      <p><strong>Total : ${result.total.toFixed(3)} mm</strong></p>
+    `;
+  }
+
+  resultsContainer.appendChild(div);
+}
