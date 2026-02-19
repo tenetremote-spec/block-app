@@ -1,4 +1,4 @@
-// RG Support 2 - Fully Stable Version (Language Fixed)
+// RG Support 2 - Fully Stable Version (Blocks Persistent)
 
 document.addEventListener("DOMContentLoaded", () => {
 
@@ -21,6 +21,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const saveSettingsBtn = document.querySelector(".save-settings-btn");
   const languageSelect = document.querySelector(".language-select");
   const pinGrid = document.querySelector(".pin-grid");
+
+  const blockInput = document.querySelector(".block-input");
+  const addBlockBtn = document.querySelector(".add-block-btn");
+  const blockList = document.querySelector(".block-list");
+
+  const BLOCK_STORAGE_KEY = "rg2_blocks";
 
   let currentLang = localStorage.getItem("rg2_lang") || "ja";
 
@@ -48,7 +54,6 @@ document.addEventListener("DOMContentLoaded", () => {
       clear: "クリア",
       calculate: "計算",
       noSolution: "許容範囲内に解なし",
-      toleranceLabel: "許容誤差",
       toleranceDisplay: "許容誤差",
       pin: "ピン",
       blocks: "ブロック",
@@ -59,7 +64,6 @@ document.addEventListener("DOMContentLoaded", () => {
       clear: "Clear All",
       calculate: "Calculate",
       noSolution: "No solution within tolerance",
-      toleranceLabel: "Tolerance",
       toleranceDisplay: "Tolerance",
       pin: "Pin",
       blocks: "Blocks",
@@ -70,7 +74,6 @@ document.addEventListener("DOMContentLoaded", () => {
       clear: "সব মুছুন",
       calculate: "হিসাব করুন",
       noSolution: "নির্ধারিত সীমার মধ্যে সমাধান নেই",
-      toleranceLabel: "সহনশীলতা",
       toleranceDisplay: "সহনশীলতা",
       pin: "পিন",
       blocks: "ব্লক",
@@ -86,15 +89,76 @@ document.addEventListener("DOMContentLoaded", () => {
     clearBtn.textContent = translations[lang].clear;
     calcBtn.textContent = translations[lang].calculate;
 
-    const tolerance = parseFloat(toleranceInput.value) || 0.1;
-    toleranceDisplay.textContent =
-      `${translations[lang].toleranceDisplay} : ±${tolerance} mm`;
-
+    updateToleranceDisplay();
     languageSelect.value = lang;
   }
 
-  // 初期適用
+  function updateToleranceDisplay() {
+    const tolerance = parseFloat(toleranceInput.value) || 0.1;
+    toleranceDisplay.textContent =
+      `${translations[currentLang].toleranceDisplay} : ±${tolerance} mm`;
+  }
+
   applyLanguage(currentLang);
+
+  // =======================
+  // Block Persistence
+  // =======================
+
+  function saveBlocks() {
+    const blocks = Array.from(document.querySelectorAll(".block-item")).map(item => ({
+      value: parseFloat(item.querySelector(".mono").textContent),
+      checked: item.querySelector("input").checked
+    }));
+    localStorage.setItem(BLOCK_STORAGE_KEY, JSON.stringify(blocks));
+  }
+
+  function createBlockItem(value, checked = true) {
+    const div = document.createElement("div");
+    div.className = "block-item";
+
+    div.innerHTML = `
+      <span class="mono">${value}</span>
+      <input type="checkbox" ${checked ? "checked" : ""}>
+      <button class="delete-btn small">✕</button>
+    `;
+
+    div.querySelector(".delete-btn").addEventListener("click", () => {
+      div.remove();
+      saveBlocks();
+    });
+
+    div.querySelector("input").addEventListener("change", saveBlocks);
+
+    blockList.appendChild(div);
+  }
+
+  function loadBlocks() {
+    const saved = localStorage.getItem(BLOCK_STORAGE_KEY);
+
+    if (saved) {
+      blockList.innerHTML = "";
+      JSON.parse(saved).forEach(b =>
+        createBlockItem(b.value, b.checked)
+      );
+    } else {
+      // 初回のみHTML既存ブロックを保存
+      saveBlocks();
+    }
+  }
+
+  loadBlocks();
+
+  if (addBlockBtn) {
+    addBlockBtn.addEventListener("click", () => {
+      const value = parseFloat(blockInput.value);
+      if (isNaN(value)) return;
+
+      createBlockItem(value, true);
+      blockInput.value = "";
+      saveBlocks();
+    });
+  }
 
   // =======================
   // UI
@@ -132,26 +196,17 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   saveSettingsBtn.addEventListener("click", () => {
-    const tolerance = parseFloat(toleranceInput.value) || 0.1;
-
-    toleranceDisplay.textContent =
-      `${translations[currentLang].toleranceDisplay} : ±${tolerance} mm`;
-
     applyLanguage(languageSelect.value);
-
+    updateToleranceDisplay();
     modal.classList.add("hidden");
   });
 
   modal.addEventListener("click", (e) => {
-    if (e.target === modal) {
-      modal.classList.add("hidden");
-    }
+    if (e.target === modal) modal.classList.add("hidden");
   });
 
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") {
-      modal.classList.add("hidden");
-    }
+    if (e.key === "Escape") modal.classList.add("hidden");
   });
 
   // =======================
@@ -171,15 +226,12 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   function getTargets() {
-    const items = document.querySelectorAll(".target-list li");
-    return Array.from(items).map(li =>
-      parseFloat(li.querySelector(".mono").textContent)
-    );
+    return Array.from(document.querySelectorAll(".target-list li"))
+      .map(li => parseFloat(li.querySelector(".mono").textContent));
   }
 
   function getActiveBlocks() {
-    const blockItems = document.querySelectorAll(".block-item");
-    return Array.from(blockItems)
+    return Array.from(document.querySelectorAll(".block-item"))
       .filter(item => item.querySelector("input").checked)
       .map(item => parseFloat(item.querySelector(".mono").textContent))
       .sort((a, b) => b - a);
@@ -187,9 +239,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function calculateCombination(target, tolerance) {
     const pins = [];
-    for (let i = 3000; i >= 0; i -= 50) {
-      pins.push(i);
-    }
+    for (let i = 3000; i >= 0; i -= 50) pins.push(i);
 
     const blocks = getActiveBlocks();
     let bestResult = null;
