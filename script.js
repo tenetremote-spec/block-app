@@ -1,8 +1,6 @@
-// RG Support 2 - Lightweight Stable Version
+// RG Support 2 - Stable + Full Language Fix Version
 
 document.addEventListener("DOMContentLoaded", () => {
-
-  const { jsPDF } = window.jspdf || {};
 
   // =======================
   // Elements
@@ -30,48 +28,54 @@ document.addEventListener("DOMContentLoaded", () => {
   const BLOCK_STORAGE_KEY = "rg2_blocks";
 
   let currentLang = localStorage.getItem("rg2_lang") || "ja";
+  let lastResults = [];
 
   // =======================
   // Language
   // =======================
 
   const translations = {
-    ja:{add:"追加",clear:"クリア",calculate:"計算",pin:"ピン",blocks:"ブロック",total:"合計",noSolution:"解なし",savePDF:"PDF保存",toleranceDisplay:"許容誤差"},
-    en:{add:"Add",clear:"Clear",calculate:"Calculate",pin:"Pin",blocks:"Blocks",total:"Total",noSolution:"No solution",savePDF:"Save PDF",toleranceDisplay:"Tolerance"},
-    bn:{add:"যোগ",clear:"মুছুন",calculate:"হিসাব",pin:"পিন",blocks:"ব্লক",total:"মোট",noSolution:"সমাধান নেই",savePDF:"PDF সংরক্ষণ",toleranceDisplay:"সহনশীলতা"}
+    ja:{add:"追加",clear:"クリア",calculate:"計算",pin:"ピン",blocks:"ブロック",total:"合計",noSolution:"解なし",delete:"削除",toleranceDisplay:"許容誤差"},
+    en:{add:"Add",clear:"Clear",calculate:"Calculate",pin:"Pin",blocks:"Blocks",total:"Total",noSolution:"No solution",delete:"Delete",toleranceDisplay:"Tolerance"},
+    bn:{add:"যোগ",clear:"মুছুন",calculate:"হিসাব",pin:"পিন",blocks:"ব্লক",total:"মোট",noSolution:"সমাধান নেই",delete:"মুছুন",toleranceDisplay:"সহনশীলতা"}
   };
 
   function applyLanguage(lang){
     currentLang=lang;
     localStorage.setItem("rg2_lang",lang);
+
     addBtn.textContent=translations[lang].add;
     clearBtn.textContent=translations[lang].clear;
     calcBtn.textContent=translations[lang].calculate;
+
     updateToleranceDisplay();
     languageSelect.value=lang;
+
+    refreshDeleteButtons();
+    redrawResults();
   }
 
   function updateToleranceDisplay(){
-    const t=parseFloat(toleranceInput.value)||0.1;
-    toleranceDisplay.textContent=`${translations[currentLang].toleranceDisplay} : ±${t} mm`;
+    let val = toleranceInput.value;
+    if(val === "") val = "0";
+    toleranceDisplay.textContent =
+      `${translations[currentLang].toleranceDisplay} : ±${val} mm`;
   }
+
+  toleranceInput.addEventListener("input", updateToleranceDisplay);
 
   applyLanguage(currentLang);
 
   // =======================
-  // Settings FIX
+  // Settings
   // =======================
 
-  if(settingsBtn){
-    settingsBtn.onclick=()=>modal.classList.remove("hidden");
-  }
+  settingsBtn.onclick=()=>modal.classList.remove("hidden");
 
-  if(saveSettingsBtn){
-    saveSettingsBtn.onclick=()=>{
-      applyLanguage(languageSelect.value);
-      modal.classList.add("hidden");
-    };
-  }
+  saveSettingsBtn.onclick=()=>{
+    applyLanguage(languageSelect.value);
+    modal.classList.add("hidden");
+  };
 
   window.onclick=(e)=>{
     if(e.target===modal) modal.classList.add("hidden");
@@ -118,15 +122,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   loadBlocks();
 
-  if(addBlockBtn){
-    addBlockBtn.onclick=()=>{
-      const v=parseFloat(blockInput.value);
-      if(isNaN(v))return;
-      createBlockItem(v,true);
-      blockInput.value="";
-      saveBlocks();
-    };
-  }
+  addBlockBtn.onclick=()=>{
+    const v=parseFloat(blockInput.value);
+    if(isNaN(v))return;
+    createBlockItem(v,true);
+    blockInput.value="";
+    saveBlocks();
+  };
 
   // =======================
   // Target UI
@@ -135,46 +137,66 @@ document.addEventListener("DOMContentLoaded", () => {
   addBtn.onclick=()=>{
     const v=parseFloat(input.value);
     if(isNaN(v))return;
+
     const li=document.createElement("li");
-    li.innerHTML=`<span class="mono">${v.toFixed(1)}</span>
-    <button class="delete-btn">Delete</button>`;
+    li.innerHTML=`
+      <span class="mono">${v.toFixed(1)}</span>
+      <button class="delete-btn">${translations[currentLang].delete}</button>
+    `;
+
     li.querySelector(".delete-btn").onclick=()=>li.remove();
+
     targetList.appendChild(li);
     input.value="";
   };
 
+  function refreshDeleteButtons(){
+    document.querySelectorAll(".target-list .delete-btn").forEach(btn=>{
+      btn.textContent=translations[currentLang].delete;
+    });
+  }
+
   clearBtn.onclick=()=>{
     targetList.innerHTML="";
     resultsContainer.innerHTML="";
+    lastResults=[];
   };
 
   // =======================
-  // Lightweight Calculation
+  // Calculation
   // =======================
 
   calcBtn.onclick=()=>{
 
     resultsContainer.innerHTML="";
-    const tolerance=parseFloat(toleranceInput.value)||0.1;
+    lastResults=[];
+
+    const tolerance = parseFloat(toleranceInput.value);
+    const safeTolerance = isNaN(tolerance) ? 0 : tolerance;
+
     const targets=getTargets().sort((a,b)=>b-a);
     const blocks=getActiveBlocks();
 
     let prevPin=3000;
 
     targets.forEach(target=>{
-
-      const result=findFast(target,blocks,tolerance,prevPin);
+      const result=findFast(target,blocks,safeTolerance,prevPin);
 
       if(result){
         prevPin=result.pin;
-        displayResult(target,result);
+        lastResults.push({target,...result});
       }else{
-        displayResult(target,{noSolution:true});
+        lastResults.push({target,noSolution:true});
       }
-
     });
 
+    redrawResults();
   };
+
+  function redrawResults(){
+    resultsContainer.innerHTML="";
+    lastResults.forEach(r=>displayResult(r));
+  }
 
   function getTargets(){
     return [...document.querySelectorAll(".target-list li")]
@@ -213,26 +235,29 @@ document.addEventListener("DOMContentLoaded", () => {
           diff:Math.abs(pin+sum-target)
         };
       }
-
     }
-
     return null;
   }
 
-  function displayResult(target,result){
+  function displayResult(result){
 
     const div=document.createElement("div");
     div.className="result-item";
 
     if(result.noSolution){
-      div.innerHTML=`<hr><p><strong>${target} mm</strong></p>
-      <p style="color:red;">${translations[currentLang].noSolution}</p>`;
+      div.innerHTML=`
+        <hr>
+        <p><strong>${result.target} mm</strong></p>
+        <p style="color:red;">${translations[currentLang].noSolution}</p>
+      `;
     }else{
-      div.innerHTML=`<hr>
-      <p><strong>${target} mm</strong></p>
-      <p>${translations[currentLang].pin} : ${result.pin}</p>
-      <p>${translations[currentLang].blocks} : ${result.blocks.join(" + ")}</p>
-      <p><strong>${translations[currentLang].total} : ${result.total.toFixed(3)} mm</strong></p>`;
+      div.innerHTML=`
+        <hr>
+        <p><strong>${result.target} mm</strong></p>
+        <p>${translations[currentLang].pin} : ${result.pin}</p>
+        <p>${translations[currentLang].blocks} : ${result.blocks.join(" + ")}</p>
+        <p><strong>${translations[currentLang].total} : ${result.total.toFixed(3)} mm</strong></p>
+      `;
     }
 
     resultsContainer.appendChild(div);
