@@ -44,7 +44,7 @@ li { margin: 10px 0; }
 <div id="mainScreen">
 
 <h2>Target Value</h2>
-<input type="number" id="target" step="0.001" min="0" max="1000">
+<input type="number" id="target" step="0.001" min="0" max="9999">
 
 <h2>Tolerance</h2>
 <input type="number" id="tolerance" step="0.001" min="0" value="0">
@@ -62,7 +62,7 @@ li { margin: 10px 0; }
 
 <h2>Number Settings</h2>
 
-<input type="number" id="newNumber" step="0.001" min="0" max="1000">
+<input type="number" id="newNumber" step="0.001" min="0" max="9999">
 <br>
 <button onclick="addNumber()">Add</button>
 <button onclick="sortNumbers()">Sort</button>
@@ -104,7 +104,7 @@ function render() {
 
 function addNumber() {
   let val = parseFloat(document.getElementById("newNumber").value);
-  if (!isNaN(val) && val > 0 && val <= 1000) {
+  if (!isNaN(val) && val > 0 && val <= 9999) {
     numbers.push({value:val, enabled:true});
     save();
     document.getElementById("newNumber").value = "";
