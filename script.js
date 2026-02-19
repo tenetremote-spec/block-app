@@ -1,4 +1,4 @@
-// RG Support 2 - Fully Stable Version
+// RG Support 2 - Fully Stable Version (Language Fixed)
 
 document.addEventListener("DOMContentLoaded", () => {
 
@@ -22,11 +22,14 @@ document.addEventListener("DOMContentLoaded", () => {
   const languageSelect = document.querySelector(".language-select");
   const pinGrid = document.querySelector(".pin-grid");
 
+  let currentLang = localStorage.getItem("rg2_lang") || "ja";
+
   // =======================
   // Pin Auto Generate
   // =======================
 
   if (pinGrid) {
+    pinGrid.innerHTML = "";
     for (let i = 0; i <= 3000; i += 50) {
       const span = document.createElement("span");
       span.textContent = i;
@@ -40,16 +43,58 @@ document.addEventListener("DOMContentLoaded", () => {
   // =======================
 
   const translations = {
-    ja: { add: "Add", clear: "Clear All", calculate: "Calculate", noSolution: "許容範囲内に解なし" },
-    en: { add: "Add", clear: "Clear All", calculate: "Calculate", noSolution: "No solution within tolerance" },
-    bn: { add: "যোগ", clear: "সব মুছুন", calculate: "হিসাব করুন", noSolution: "নির্ধারিত সীমার মধ্যে সমাধান নেই" }
+    ja: {
+      add: "追加",
+      clear: "クリア",
+      calculate: "計算",
+      noSolution: "許容範囲内に解なし",
+      toleranceLabel: "許容誤差",
+      toleranceDisplay: "許容誤差",
+      pin: "ピン",
+      blocks: "ブロック",
+      total: "合計"
+    },
+    en: {
+      add: "Add",
+      clear: "Clear All",
+      calculate: "Calculate",
+      noSolution: "No solution within tolerance",
+      toleranceLabel: "Tolerance",
+      toleranceDisplay: "Tolerance",
+      pin: "Pin",
+      blocks: "Blocks",
+      total: "Total"
+    },
+    bn: {
+      add: "যোগ",
+      clear: "সব মুছুন",
+      calculate: "হিসাব করুন",
+      noSolution: "নির্ধারিত সীমার মধ্যে সমাধান নেই",
+      toleranceLabel: "সহনশীলতা",
+      toleranceDisplay: "সহনশীলতা",
+      pin: "পিন",
+      blocks: "ব্লক",
+      total: "মোট"
+    }
   };
 
   function applyLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem("rg2_lang", lang);
+
     addBtn.textContent = translations[lang].add;
     clearBtn.textContent = translations[lang].clear;
     calcBtn.textContent = translations[lang].calculate;
+
+    const tolerance = parseFloat(toleranceInput.value) || 0.1;
+    toleranceDisplay.textContent =
+      `${translations[lang].toleranceDisplay} : ±${tolerance} mm`;
+
+    languageSelect.value = lang;
   }
+
+  // 初期適用
+  applyLanguage(currentLang);
 
   // =======================
   // UI
@@ -88,10 +133,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   saveSettingsBtn.addEventListener("click", () => {
     const tolerance = parseFloat(toleranceInput.value) || 0.1;
-    toleranceDisplay.textContent = `Tolerance : ±${tolerance} mm`;
 
-    const selectedLang = languageSelect.value;
-    applyLanguage(selectedLang);
+    toleranceDisplay.textContent =
+      `${translations[currentLang].toleranceDisplay} : ±${tolerance} mm`;
+
+    applyLanguage(languageSelect.value);
 
     modal.classList.add("hidden");
   });
@@ -158,7 +204,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const total = pin + blockResult.sum;
         const diff = Math.abs(total - target);
 
-        if (!bestResult || diff < bestResult.diff || blockResult.blocks.length < bestResult.blocks.length) {
+        if (!bestResult || diff < bestResult.diff ||
+            blockResult.blocks.length < bestResult.blocks.length) {
           bestResult = { pin, blocks: blockResult.blocks, total, diff };
         }
 
@@ -176,7 +223,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const diff = Math.abs(currentSum - target);
 
       if (diff <= tolerance) {
-        if (!best || diff < best.diff || usedBlocks.length < best.blocks.length) {
+        if (!best || diff < best.diff ||
+            usedBlocks.length < best.blocks.length) {
           best = { sum: currentSum, blocks: [...usedBlocks], diff };
         }
       }
@@ -203,15 +251,15 @@ document.addEventListener("DOMContentLoaded", () => {
       div.innerHTML = `
         <hr>
         <p><strong>${target} mm</strong></p>
-        <p style="color:red;">${translations[languageSelect.value].noSolution}</p>
+        <p style="color:red;">${translations[currentLang].noSolution}</p>
       `;
     } else {
       div.innerHTML = `
         <hr>
         <p><strong>${target} mm</strong></p>
-        <p style="color:#1565c0;">Pin : ${result.pin}</p>
-        <p style="color:#ef6c00;">Blocks : ${result.blocks.join(" + ")}</p>
-        <p><strong>Total : ${result.total.toFixed(3)} mm</strong></p>
+        <p style="color:#1565c0;">${translations[currentLang].pin} : ${result.pin}</p>
+        <p style="color:#ef6c00;">${translations[currentLang].blocks} : ${result.blocks.join(" + ")}</p>
+        <p><strong>${translations[currentLang].total} : ${result.total.toFixed(3)} mm</strong></p>
       `;
     }
 
