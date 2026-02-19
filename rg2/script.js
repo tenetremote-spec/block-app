@@ -45,23 +45,23 @@ document.addEventListener("DOMContentLoaded", () => {
     renderList();
   });
 
-});
-// ===== Modal Control =====
-const settingsBtn = document.querySelector(".settings-btn");
-const modal = document.querySelector(".modal");
-const saveBtn = document.querySelector(".modal .btn-primary");
+  // ===== Modal Control =====
+  const settingsBtn = document.querySelector(".settings-btn");
+  const modal = document.querySelector(".modal");
+  const saveBtn = document.querySelector(".modal .btn-primary");
 
-settingsBtn.addEventListener("click", () => {
-  modal.classList.remove("hidden");
-});
+  settingsBtn.addEventListener("click", () => {
+    modal.classList.remove("hidden");
+  });
 
-saveBtn.addEventListener("click", () => {
-  modal.classList.add("hidden");
-});
-
-// 背景クリックで閉じる
-modal.addEventListener("click", (e) => {
-  if (e.target === modal) {
+  saveBtn.addEventListener("click", () => {
     modal.classList.add("hidden");
-  }
+  });
+
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) {
+      modal.classList.add("hidden");
+    }
+  });
+
 });
