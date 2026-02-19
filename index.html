@@ -9,19 +9,19 @@
 body {
   font-family: sans-serif;
   padding: 20px;
-  font-size: 1.5rem;
+  font-size: 1.6rem;
   text-align: center;
 }
 
-h1 { font-size: 2.2rem; }
+h1 { font-size: 2.4rem; }
 
 input, button {
-  font-size: 1.5rem;
-  padding: 10px;
+  font-size: 1.6rem;
+  padding: 12px;
   margin: 10px;
 }
 
-button { border-radius: 10px; }
+button { border-radius: 12px; }
 
 ul { list-style: none; padding: 0; }
 li { margin: 10px 0; }
@@ -29,7 +29,7 @@ li { margin: 10px 0; }
 #settingsScreen { display: none; }
 
 .container {
-  max-width: 600px;
+  max-width: 650px;
   margin: auto;
 }
 </style>
@@ -41,21 +41,16 @@ li { margin: 10px 0; }
 
 <h1>RG Support</h1>
 
-<!-- Main Screen -->
 <div id="mainScreen">
 
 <h2>Target Value</h2>
-<input type="number" id="target" step="0.001" min="0" max="1000"
- placeholder="Enter target (0 - 1000)">
-<br>
+<input type="number" id="target" step="0.001" min="0" max="1000">
 
 <h2>Tolerance</h2>
-<input type="number" id="tolerance" step="0.001" min="0"
- placeholder="Allowed error (e.g. 0.01)">
-<br>
+<input type="number" id="tolerance" step="0.001" min="0" value="0">
 
-<button onclick="calculate()">Calculate</button>
 <br>
+<button onclick="calculate()">Calculate</button>
 <button onclick="openSettings()">Settings</button>
 
 <h2>Result</h2>
@@ -63,16 +58,12 @@ li { margin: 10px 0; }
 
 </div>
 
-<!-- Settings Screen -->
 <div id="settingsScreen">
 
 <h2>Number Settings</h2>
 
-<input type="number" id="newNumber"
- step="0.001" min="0" max="1000"
- placeholder="Add number (0 - 1000)">
+<input type="number" id="newNumber" step="0.001" min="0" max="1000">
 <br>
-
 <button onclick="addNumber()">Add</button>
 <button onclick="sortNumbers()">Sort</button>
 <button onclick="closeSettings()">Back</button>
@@ -113,7 +104,7 @@ function render() {
 
 function addNumber() {
   let val = parseFloat(document.getElementById("newNumber").value);
-  if (!isNaN(val) && val >= 0 && val <= 1000) {
+  if (!isNaN(val) && val > 0 && val <= 1000) {
     numbers.push({value:val, enabled:true});
     save();
     document.getElementById("newNumber").value = "";
@@ -131,7 +122,7 @@ function toggleNumber(i) {
 }
 
 function sortNumbers() {
-  numbers.sort((a,b)=>a.value-b.value);
+  numbers.sort((a,b)=>b.value-a.value);
   save();
 }
 
@@ -142,25 +133,51 @@ function calculate() {
 
   if (isNaN(target)) return;
 
-  let activeNumbers = numbers
-    .filter(n=>n.enabled && n.value <= target)
-    .map(n=>n.value);
+  let active = numbers
+    .filter(n=>n.enabled)
+    .map(n=>Math.round(n.value*1000));
 
-  let sum = activeNumbers.reduce((a,b)=>a+b,0);
-  let difference = Math.abs(target - sum);
+  target = Math.round(target*1000);
+  tolerance = Math.round(tolerance*1000);
 
-  let message = activeNumbers.join(" + ") +
-    " = " + sum.toFixed(3);
+  let best = null;
 
-  if (difference <= tolerance) {
-    message += " ✔ Within Tolerance";
-  } else {
-    message += " ✖ Outside Tolerance";
+  function backtrack(start, sum, combo) {
+
+    if (sum > target + tolerance) return;
+
+    let diff = Math.abs(target - sum);
+    if (diff <= tolerance) {
+      if (best === null || combo.length < best.length) {
+        best = [...combo];
+      }
+    }
+
+    for (let i = start; i < active.length; i++) {
+      combo.push(active[i]);
+      backtrack(i + 1, sum + active[i], combo);
+      combo.pop();
+    }
   }
 
-  message += " (Diff: " + difference.toFixed(3) + ")";
+  backtrack(0, 0, []);
 
-  document.getElementById("result").innerText = message;
+  if (!best) {
+    document.getElementById("result").innerText =
+      "No combination found.";
+    return;
+  }
+
+  let sum = best.reduce((a,b)=>a+b,0);
+  let diff = Math.abs(target - sum);
+
+  let resultText =
+    best.map(n=> (n/1000).toFixed(3)).join(" + ")
+    + " = " + (sum/1000).toFixed(3)
+    + " (Used: " + best.length + ")"
+    + " (Diff: " + (diff/1000).toFixed(3) + ")";
+
+  document.getElementById("result").innerText = resultText;
 }
 
 function openSettings() {
