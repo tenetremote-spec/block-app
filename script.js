@@ -1,4 +1,4 @@
-// RG Support 2 - Full Version
+// RG Support 2 - Stable Full Version
 
 // =======================
 // Element references
@@ -12,6 +12,7 @@ const clearBtn = document.querySelector(".clear-btn");
 const calcBtn = document.querySelector(".calc-btn");
 const resultsContainer = document.querySelector(".results-container");
 const toleranceInput = document.querySelector(".tolerance-input");
+const toleranceDisplay = document.querySelector(".tolerance-display");
 
 const settingsBtn = document.querySelector(".settings-btn");
 const modal = document.querySelector(".modal");
@@ -46,14 +47,35 @@ clearBtn.addEventListener("click", () => {
   resultsContainer.innerHTML = "";
 });
 
+// =======================
+// SETTINGS
+// =======================
+
 // Open settings
 settingsBtn.addEventListener("click", () => {
   modal.classList.remove("hidden");
 });
 
-// Save settings (close)
+// Save settings
 saveSettingsBtn.addEventListener("click", () => {
+  const tolerance = parseFloat(toleranceInput.value) || 0.1;
+  toleranceDisplay.textContent = `Tolerance : ±${tolerance} mm`;
+
   modal.classList.add("hidden");
+});
+
+// Close when clicking outside modal content
+modal.addEventListener("click", (e) => {
+  if (e.target === modal) {
+    modal.classList.add("hidden");
+  }
+});
+
+// Close with ESC key
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    modal.classList.add("hidden");
+  }
 });
 
 // =======================
@@ -106,7 +128,11 @@ function calculateCombination(target, tolerance) {
       const total = pin + blockResult.sum;
       const diff = Math.abs(total - target);
 
-      if (!bestResult || diff < bestResult.diff) {
+      if (
+        !bestResult ||
+        diff < bestResult.diff ||
+        blockResult.blocks.length < bestResult.blocks.length
+      ) {
         bestResult = {
           pin,
           blocks: blockResult.blocks,
@@ -129,7 +155,11 @@ function searchBlocks(target, blocks, tolerance) {
     const diff = Math.abs(currentSum - target);
 
     if (diff <= tolerance) {
-      if (!best || diff < best.diff || usedBlocks.length < best.blocks.length) {
+      if (
+        !best ||
+        diff < best.diff ||
+        usedBlocks.length < best.blocks.length
+      ) {
         best = {
           sum: currentSum,
           blocks: [...usedBlocks],
