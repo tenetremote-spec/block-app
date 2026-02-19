@@ -1,5 +1,7 @@
 // RG Support 2 - FINAL COMPLETE STABLE (完全段取り最小探索版)
 
+const APP_VERSION = "2.0.0 - Full Setup Minimization DFS";
+
 document.addEventListener("DOMContentLoaded", () => {
 
   // =======================
@@ -142,7 +144,7 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   // =======================
-  // 🔥 完全段取り最小探索アルゴリズム
+  // 完全段取り最小探索
   // =======================
 
   calcBtn.onclick=()=>{
@@ -316,5 +318,19 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   applyLanguage(currentLang);
+
+  // =======================
+  // Version Display（追加のみ）
+  // =======================
+
+  const versionTag = document.createElement("div");
+  versionTag.style.position = "fixed";
+  versionTag.style.bottom = "5px";
+  versionTag.style.right = "10px";
+  versionTag.style.fontSize = "11px";
+  versionTag.style.opacity = "0.6";
+  versionTag.style.pointerEvents = "none";
+  versionTag.textContent = "ver " + APP_VERSION;
+  document.body.appendChild(versionTag);
 
 });
