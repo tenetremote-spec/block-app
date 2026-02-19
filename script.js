@@ -210,58 +210,51 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function sequentialOptimize(targets, blocks, tolerance) {
 
-    const pins = [];
-    for (let i = 3000; i >= 0; i -= 50) pins.push(i);
+  const pins = [];
+  for (let i = 3000; i >= 0; i -= 50) pins.push(i);
 
-    let prevPin = 3000;
-    let prevBlocks = [];
+  let prevPin = 3000;
+  const results = [];
 
-    const results = [];
+  for (let target of targets) {
 
-    for (let target of targets) {
+    let found = null;
 
-      let best = null;
+    for (let pin of pins) {
 
-      for (let pin of pins) {
+      if (pin > target) continue;
+      if (pin > prevPin) continue; // 不可逆
 
-        if (pin > target) continue;
-        if (pin > prevPin) continue; // 不可逆
+      const remainder = target - pin;
+      const blockResult = searchBlocks(remainder, blocks, tolerance);
 
-        const remainder = target - pin;
-        const blockResult = searchBlocks(remainder, blocks, tolerance);
-        if (!blockResult) continue;
-
+      if (blockResult) {
         const total = pin + blockResult.sum;
         const diff = Math.abs(total - target);
 
-        const blockChange = countBlockChange(prevBlocks, blockResult.blocks);
+        found = {
+          target,
+          pin,
+          blocks: blockResult.blocks,
+          total,
+          diff
+        };
 
-        const score =
-          (pin === prevPin ? 0 : 1000) + blockChange + diff;
-
-        if (!best || score < best.score) {
-          best = {
-            target,
-            pin,
-            blocks: blockResult.blocks,
-            total,
-            diff,
-            score
-          };
-        }
-      }
-
-      if (!best) {
-        results.push({ target, noSolution: true });
-      } else {
-        prevPin = best.pin;
-        prevBlocks = best.blocks;
-        results.push(best);
+        break; // ← ここが重要（最初の最大Pin採用）
       }
     }
 
-    return results;
+    if (!found) {
+      results.push({ target, noSolution: true });
+    } else {
+      prevPin = found.pin;
+      results.push(found);
+    }
   }
+
+  return results;
+}
+
 
   function countBlockChange(prev, current) {
     const prevCount = {};
