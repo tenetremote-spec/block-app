@@ -3,7 +3,7 @@
 document.addEventListener("DOMContentLoaded", () => {
 
   // =======================
-  // Elements（変更なし）
+  // Elements
   // =======================
 
   const addBtn = document.querySelector(".add-btn");
@@ -38,11 +38,14 @@ document.addEventListener("DOMContentLoaded", () => {
   let lastResults = [];
   let blockSortDesc = true;
 
+  // 🔥 ここだけ追加（初期値0）
+  toleranceInput.value = "0";
+
   // =======================
-  // Language（変更なし）
+  // Language
   // =======================
 
-  const translations = { /* 省略なし：元コードそのまま */ 
+  const translations = {
     ja:{add:"追加",clear:"クリア",calculate:"計算",pin:"ピン",blocks:"ブロック",total:"合計",noSolution:"解なし",delete:"削除",toleranceDisplay:"許容誤差",settings:"設定",save:"保存",toleranceLabel:"許容誤差 (mm)",languageLabel:"言語",pinsLabel:"ピン (50mmピッチ / 固定)",blocksLabel:"ブロック",lengthPlaceholder:"寸法を入力",blockPlaceholder:"ブロック寸法",tolerancePlaceholder:"許容誤差",sort:"ソート",result:"結果"},
     en:{add:"Add",clear:"Clear",calculate:"Calculate",pin:"Pin",blocks:"Blocks",total:"Total",noSolution:"No solution",delete:"Delete",toleranceDisplay:"Tolerance",settings:"Settings",save:"Save",toleranceLabel:"Tolerance (mm)",languageLabel:"Language",pinsLabel:"Pins (50mm pitch / Fixed)",blocksLabel:"Blocks",lengthPlaceholder:"Enter length",blockPlaceholder:"Block size",tolerancePlaceholder:"Tolerance",sort:"Sort",result:"RESULT"},
     bn:{add:"যোগ",clear:"মুছুন",calculate:"হিসাব",pin:"পিন",blocks:"ব্লক",total:"মোট",noSolution:"সমাধান নেই",delete:"মুছুন",toleranceDisplay:"সহনশীলতা",settings:"সেটিংস",save:"সংরক্ষণ",toleranceLabel:"সহনশীলতা (mm)",languageLabel:"ভাষা",pinsLabel:"পিন (৫০মিমি পিচ / স্থির)",blocksLabel:"ব্লক",lengthPlaceholder:"মাত্রা লিখুন",blockPlaceholder:"ব্লক মাত্রা",tolerancePlaceholder:"সহনশীলতা",sort:"সাজান",result:"ফলাফল"}
@@ -84,7 +87,7 @@ document.addEventListener("DOMContentLoaded", () => {
   toleranceInput.addEventListener("input", updateToleranceDisplay);
 
   // =======================
-  // Settings / Block管理（変更なし）
+  // 以下すべて前回コードと完全同一（計算含む）
   // =======================
 
   settingsBtn.onclick = () => modal.classList.remove("hidden");
@@ -125,10 +128,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   loadBlocks();
 
-  // =======================
-  // Target追加（変更なし）
-  // =======================
-
   addBtn.onclick=()=>{
     const v=parseFloat(input.value);
     if(isNaN(v))return;
@@ -148,9 +147,7 @@ document.addEventListener("DOMContentLoaded", () => {
     lastResults=[];
   };
 
-  // =======================
-  // 🔥 計算部（完全置換）
-  // =======================
+  // ===== 計算部（前回と同一） =====
 
   calcBtn.onclick=()=>{
 
@@ -200,10 +197,6 @@ document.addEventListener("DOMContentLoaded", () => {
       .sort((a,b)=>b-a);
   }
 
-  // =======================
-  // 🚀 段取り最小絶対優先アルゴリズム
-  // =======================
-
   function findOptimized(target,blocks,tolerance,prevPin,prevBlocks){
 
     let best=null;
@@ -226,7 +219,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const sum=used.reduce((a,b)=>a+b,0);
         const error=Math.abs(sum-remainder);
-
         if(error>tolerance) return;
 
         const changes=countChanges(prevBlocks,used);
@@ -234,15 +226,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if(score<bestScore){
           bestScore=score;
-          best={
-            pin,
-            blocks:used,
-            total:pin+sum
-          };
+          best={pin,blocks:used,total:pin+sum};
         }
       });
     }
-
     return best;
   }
 
@@ -250,7 +237,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const list=[];
 
-    // 1. 前回ブロック優先
     let sum=0;
     let used=[];
     prevBlocks.forEach(b=>{
@@ -261,7 +247,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     list.push([...used]);
 
-    // 2. 大→小
     sum=0; used=[];
     blocks.forEach(b=>{
       while(sum+b<=remainder+tolerance){
@@ -270,7 +255,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     list.push([...used]);
 
-    // 3. 小→大
     sum=0; used=[];
     [...blocks].reverse().forEach(b=>{
       while(sum+b<=remainder+tolerance){
@@ -323,6 +307,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   applyLanguage(currentLang);
+  updateToleranceDisplay();
 
 });
-
