@@ -325,3 +325,4 @@ document.addEventListener("DOMContentLoaded", () => {
   applyLanguage(currentLang);
 
 });
+
