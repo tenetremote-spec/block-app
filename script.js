@@ -1,6 +1,6 @@
-// RG Support 2 - FINAL COMPLETE STABLE (完全段取り最小探索版 - Series Global Optimization)
+// RG Support 2 - FINAL COMPLETE STABLE (完全段取り最小探索版)
 
-const APP_VERSION = "3.0.0 - Full Sequence Setup Minimization";
+const APP_VERSION = "2.0.0 - Full Setup Minimization DFS";
 
 document.addEventListener("DOMContentLoaded", () => {
 
@@ -144,7 +144,7 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   // =======================
-  // 🔥 全系列完全最小探索エンジン
+  // 完全段取り最小探索
   // =======================
 
   calcBtn.onclick=()=>{
@@ -158,84 +158,30 @@ document.addEventListener("DOMContentLoaded", () => {
     const targets=getTargets().sort((a,b)=>b-a);
     const blocks=getActiveBlocks();
 
-    let bestSequence=null;
-    let bestTotalChanges=Infinity;
+    let prevPin=3000;
+    let prevBlocks=[];
 
-    function dfsSequence(index, prevPin, prevBlocks, sequence, totalChanges){
+    targets.forEach(target=>{
 
-      if(index===targets.length){
-        if(totalChanges<bestTotalChanges){
-          bestTotalChanges=totalChanges;
-          bestSequence=[...sequence];
-        }
-        return;
+      const result=findOptimized(
+        target,
+        blocks,
+        safeTolerance,
+        prevPin,
+        prevBlocks
+      );
+
+      if(result){
+        prevPin=result.pin;
+        prevBlocks=[...result.blocks];
+        lastResults.push({target,...result});
+      }else{
+        lastResults.push({target,noSolution:true});
       }
-
-      if(totalChanges>=bestTotalChanges) return;
-
-      const target=targets[index];
-
-      for(let pin=prevPin;pin>=0;pin-=50){
-
-        if(pin>target) continue;
-
-        const remainder=target-pin;
-
-        const combinations=findBlockCombos(remainder,blocks,safeTolerance);
-
-        for(const combo of combinations){
-
-          const changes=countChanges(prevBlocks,combo);
-          const newTotal=totalChanges+changes;
-
-          if(newTotal>=bestTotalChanges) continue;
-
-          dfsSequence(
-            index+1,
-            pin,
-            combo,
-            [...sequence,{target,pin,blocks:combo,total:pin+combo.reduce((a,b)=>a+b,0)}],
-            newTotal
-          );
-        }
-      }
-    }
-
-    dfsSequence(0,3000,[],[],0);
-
-    if(bestSequence){
-      lastResults=bestSequence;
-    }else{
-      targets.forEach(t=>lastResults.push({target:t,noSolution:true}));
-    }
+    });
 
     redrawResults();
   };
-
-  function findBlockCombos(target,blocks,tolerance){
-
-    const results=[];
-
-    function dfs(sum,start,current){
-
-      const error=Math.abs(sum-target);
-      if(error<=tolerance){
-        results.push([...current]);
-        return;
-      }
-
-      if(sum>target+tolerance) return;
-
-      for(let i=start;i<blocks.length;i++){
-        current.push(blocks[i]);
-        dfs(sum+blocks[i],i,current);
-        current.pop();
-      }
-    }
-
-    dfs(0,0,[]);
-    return results;
-  }
 
   function getTargets(){
     return [...document.querySelectorAll(".target-list li")]
@@ -247,6 +193,88 @@ document.addEventListener("DOMContentLoaded", () => {
       .filter(i=>i.querySelector("input").checked)
       .map(i=>parseFloat(i.querySelector(".mono").textContent))
       .sort((a,b)=>b-a);
+  }
+
+  function findOptimized(target,blocks,tolerance,prevPin,prevBlocks){
+
+    let best=null;
+    let bestChanges=Infinity;
+
+    for(let pin=prevPin;pin>=0;pin-=50){
+
+      if(pin>target) continue;
+
+      const remainder=target-pin;
+
+      const result=dfsSearch(
+        remainder,
+        blocks,
+        tolerance,
+        prevBlocks,
+        [],
+        0,
+        0,
+        bestChanges
+      );
+
+      if(result && result.changes<bestChanges){
+        bestChanges=result.changes;
+        best={
+          pin,
+          blocks:result.blocks,
+          total:pin+result.sum
+        };
+      }
+
+      if(bestChanges===0) break;
+    }
+
+    return best;
+  }
+
+  function dfsSearch(target,blocks,tolerance,prevBlocks,current,sum,start,bestChanges){
+
+    const error=Math.abs(sum-target);
+
+    if(error<=tolerance){
+      const changes=countChanges(prevBlocks,current);
+      return {blocks:[...current],sum,changes};
+    }
+
+    if(sum>target+tolerance) return null;
+
+    let best=null;
+
+    for(let i=start;i<blocks.length;i++){
+
+      current.push(blocks[i]);
+
+      const changes=countChanges(prevBlocks,current);
+      if(changes>=bestChanges){
+        current.pop();
+        continue;
+      }
+
+      const result=dfsSearch(
+        target,
+        blocks,
+        tolerance,
+        prevBlocks,
+        current,
+        sum+blocks[i],
+        i,
+        bestChanges
+      );
+
+      if(result){
+        best=result;
+        bestChanges=result.changes;
+      }
+
+      current.pop();
+    }
+
+    return best;
   }
 
   function countChanges(prev,next){
@@ -291,6 +319,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   applyLanguage(currentLang);
 
+  // =======================
+  // Version Display（追加のみ）
+  // =======================
+
   const versionTag = document.createElement("div");
   versionTag.style.position = "fixed";
   versionTag.style.bottom = "5px";
@@ -300,5 +332,3 @@ document.addEventListener("DOMContentLoaded", () => {
   versionTag.style.pointerEvents = "none";
   versionTag.textContent = "ver " + APP_VERSION;
   document.body.appendChild(versionTag);
-
-});
