@@ -1,11 +1,11 @@
-// RG Support 2 - FINAL COMPLETE STABLE (完全段取り最小探索版)
+// RG Support 2 - FINAL COMPLETE STABLE
 
-const APP_VERSION = "2.0.0 - Full Setup Minimization DFS";
+const APP_VERSION = "rgsp ver2.0.0";
 
 document.addEventListener("DOMContentLoaded", () => {
 
   // =======================
-  // Elements（変更なし）
+  // Elements
   // =======================
 
   const addBtn = document.querySelector(".add-btn");
@@ -38,21 +38,73 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let currentLang = localStorage.getItem("rg2_lang") || "ja";
   let lastResults = [];
+  let blockSortDesc = true;
 
+  // ★ 許容誤差 初期値を0に固定
   toleranceInput.value = "0";
 
   // =======================
-  // Language（変更なし）
+  // Language
   // =======================
 
   const translations = {
-    ja:{add:"追加",clear:"クリア",calculate:"計算",pin:"ピン",blocks:"ブロック",total:"合計",noSolution:"解なし",delete:"削除",toleranceDisplay:"許容誤差",settings:"設定",save:"保存",toleranceLabel:"許容誤差 (mm)",languageLabel:"言語",pinsLabel:"ピン (50mmピッチ / 固定)",blocksLabel:"ブロック",lengthPlaceholder:"寸法を入力",blockPlaceholder:"ブロック寸法",tolerancePlaceholder:"許容誤差",sort:"ソート",result:"結果"},
-    en:{add:"Add",clear:"Clear",calculate:"Calculate",pin:"Pin",blocks:"Blocks",total:"Total",noSolution:"No solution",delete:"Delete",toleranceDisplay:"Tolerance",settings:"Settings",save:"Save",toleranceLabel:"Tolerance (mm)",languageLabel:"Language",pinsLabel:"Pins (50mm pitch / Fixed)",blocksLabel:"Blocks",lengthPlaceholder:"Enter length",blockPlaceholder:"Block size",tolerancePlaceholder:"Tolerance",sort:"Sort",result:"RESULT"},
-    bn:{add:"যোগ",clear:"মুছুন",calculate:"হিসাব",pin:"পিন",blocks:"ব্লক",total:"মোট",noSolution:"সমাধান নেই",delete:"মুছুন",toleranceDisplay:"সহনশীলতা",settings:"সেটিংস",save:"সংরক্ষণ",toleranceLabel:"সহনশীলতা (mm)",languageLabel:"ভাষা",pinsLabel:"পিন (৫০মিমি পিচ / স্থির)",blocksLabel:"ব্লক",lengthPlaceholder:"মাত্রা লিখুন",blockPlaceholder:"ব্লক মাত্রা",tolerancePlaceholder:"সহনশীলতা",sort:"সাজান",result:"ফলাফল"}
+
+    ja:{
+      add:"追加",clear:"クリア",calculate:"計算",
+      pin:"ピン",blocks:"ブロック",total:"合計",
+      noSolution:"解なし",delete:"削除",
+      toleranceDisplay:"許容誤差",
+      settings:"設定",save:"保存",
+      toleranceLabel:"許容誤差 (mm)",
+      languageLabel:"言語",
+      pinsLabel:"ピン (50mmピッチ / 固定)",
+      blocksLabel:"ブロック",
+      lengthPlaceholder:"寸法を入力",
+      blockPlaceholder:"ブロック寸法",
+      tolerancePlaceholder:"許容誤差",
+      sort:"ソート",
+      result:"結果"
+    },
+
+    en:{
+      add:"Add",clear:"Clear",calculate:"Calculate",
+      pin:"Pin",blocks:"Blocks",total:"Total",
+      noSolution:"No solution",delete:"Delete",
+      toleranceDisplay:"Tolerance",
+      settings:"Settings",save:"Save",
+      toleranceLabel:"Tolerance (mm)",
+      languageLabel:"Language",
+      pinsLabel:"Pins (50mm pitch / Fixed)",
+      blocksLabel:"Blocks",
+      lengthPlaceholder:"Enter length",
+      blockPlaceholder:"Block size",
+      tolerancePlaceholder:"Tolerance",
+      sort:"Sort",
+      result:"RESULT"
+    },
+
+    bn:{
+      add:"যোগ",clear:"মুছুন",calculate:"হিসাব",
+      pin:"পিন",blocks:"ব্লক",total:"মোট",
+      noSolution:"সমাধান নেই",delete:"মুছুন",
+      toleranceDisplay:"সহনশীলতা",
+      settings:"সেটিংস",save:"সংরক্ষণ",
+      toleranceLabel:"সহনশীলতা (mm)",
+      languageLabel:"ভাষা",
+      pinsLabel:"পিন (৫০মিমি পিচ / স্থির)",
+      blocksLabel:"ব্লক",
+      lengthPlaceholder:"মাত্রা লিখুন",
+      blockPlaceholder:"ব্লক মাত্রা",
+      tolerancePlaceholder:"সহনশীলতা",
+      sort:"সাজান",
+      result:"ফলাফল"
+    }
   };
 
   function applyLanguage(lang){
+
     if(!translations[lang]) lang="ja";
+
     currentLang = lang;
     localStorage.setItem("rg2_lang", lang);
 
@@ -74,7 +126,10 @@ document.addEventListener("DOMContentLoaded", () => {
     if(resultsTitle) resultsTitle.textContent = translations[lang].result;
 
     updateToleranceDisplay();
+    refreshDeleteButtons();
     redrawResults();
+    updateSortButton();
+
     languageSelect.value = lang;
   }
 
@@ -86,13 +141,30 @@ document.addEventListener("DOMContentLoaded", () => {
 
   toleranceInput.addEventListener("input", updateToleranceDisplay);
 
+  // =======================
+  // Settings
+  // =======================
+
   settingsBtn.onclick = () => modal.classList.remove("hidden");
+
   saveSettingsBtn.onclick = () => {
     applyLanguage(languageSelect.value);
     modal.classList.add("hidden");
   };
-  window.addEventListener("click", e=>{ if(e.target===modal) modal.classList.add("hidden");});
-  document.addEventListener("keydown",e=>{ if(e.key==="Escape") modal.classList.add("hidden");});
+
+  window.addEventListener("click", (e)=>{
+    if(e.target === modal){
+      modal.classList.add("hidden");
+    }
+  });
+
+  document.addEventListener("keydown",(e)=>{
+    if(e.key==="Escape") modal.classList.add("hidden");
+  });
+
+  // =======================
+  // Block Persistence
+  // =======================
 
   function saveBlocks(){
     const blocks=[...blockList.children].map(i=>({
@@ -124,18 +196,78 @@ document.addEventListener("DOMContentLoaded", () => {
 
   loadBlocks();
 
+  // =======================
+  // Block Sort
+  // =======================
+
+  const sortBtn = document.createElement("button");
+  sortBtn.className="sort-btn";
+  blockList.parentNode.insertBefore(sortBtn, blockList);
+
+  sortBtn.onclick=()=>{
+    blockSortDesc = !blockSortDesc;
+    sortBlocksUI();
+  };
+
+  function sortBlocksUI(){
+    const items=[...blockList.children];
+
+    items.sort((a,b)=>{
+      const av=parseFloat(a.querySelector(".mono").textContent);
+      const bv=parseFloat(b.querySelector(".mono").textContent);
+      return blockSortDesc?bv-av:av-bv;
+    });
+
+    blockList.innerHTML="";
+    items.forEach(i=>blockList.appendChild(i));
+    saveBlocks();
+    updateSortButton();
+  }
+
+  function updateSortButton(){
+    sortBtn.textContent =
+      translations[currentLang].sort + " : " + (blockSortDesc?"↓":"↑");
+  }
+
+  updateSortButton();
+
+  // =======================
+  // Add Block
+  // =======================
+
+  addBlockBtn.onclick=()=>{
+    const v=parseFloat(blockInput.value);
+    if(isNaN(v))return;
+    createBlockItem(v,true);
+    blockInput.value="";
+    saveBlocks();
+    sortBlocksUI();
+  };
+
+  // =======================
+  // Add Target
+  // =======================
+
   addBtn.onclick=()=>{
     const v=parseFloat(input.value);
     if(isNaN(v))return;
+
     const li=document.createElement("li");
     li.innerHTML=`
       <span class="mono">${v.toFixed(1)}</span>
       <button class="delete-btn">${translations[currentLang].delete}</button>
     `;
     li.querySelector(".delete-btn").onclick=()=>li.remove();
+
     targetList.appendChild(li);
     input.value="";
   };
+
+  function refreshDeleteButtons(){
+    document.querySelectorAll(".target-list .delete-btn").forEach(btn=>{
+      btn.textContent=translations[currentLang].delete;
+    });
+  }
 
   clearBtn.onclick=()=>{
     targetList.innerHTML="";
@@ -144,7 +276,7 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   // =======================
-  // 完全段取り最小探索
+  // Calculation（変更なし）
   // =======================
 
   calcBtn.onclick=()=>{
@@ -159,21 +291,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const blocks=getActiveBlocks();
 
     let prevPin=3000;
-    let prevBlocks=[];
 
     targets.forEach(target=>{
-
-      const result=findOptimized(
-        target,
-        blocks,
-        safeTolerance,
-        prevPin,
-        prevBlocks
-      );
+      const result=findFast(target,blocks,safeTolerance,prevPin);
 
       if(result){
         prevPin=result.pin;
-        prevBlocks=[...result.blocks];
         lastResults.push({target,...result});
       }else{
         lastResults.push({target,noSolution:true});
@@ -195,97 +318,32 @@ document.addEventListener("DOMContentLoaded", () => {
       .sort((a,b)=>b-a);
   }
 
-  function findOptimized(target,blocks,tolerance,prevPin,prevBlocks){
-
-    let best=null;
-    let bestChanges=Infinity;
+  function findFast(target,blocks,tolerance,prevPin){
 
     for(let pin=prevPin;pin>=0;pin-=50){
 
-      if(pin>target) continue;
+      if(pin>target)continue;
 
-      const remainder=target-pin;
+      let remainder=target-pin;
+      let sum=0;
+      let used=[];
 
-      const result=dfsSearch(
-        remainder,
-        blocks,
-        tolerance,
-        prevBlocks,
-        [],
-        0,
-        0,
-        bestChanges
-      );
+      for(let b of blocks){
+        while(sum+b<=remainder+tolerance){
+          sum+=b;
+          used.push(b);
+        }
+      }
 
-      if(result && result.changes<bestChanges){
-        bestChanges=result.changes;
-        best={
+      if(Math.abs(sum-remainder)<=tolerance){
+        return{
           pin,
-          blocks:result.blocks,
-          total:pin+result.sum
+          blocks:used,
+          total:pin+sum
         };
       }
-
-      if(bestChanges===0) break;
     }
-
-    return best;
-  }
-
-  function dfsSearch(target,blocks,tolerance,prevBlocks,current,sum,start,bestChanges){
-
-    const error=Math.abs(sum-target);
-
-    if(error<=tolerance){
-      const changes=countChanges(prevBlocks,current);
-      return {blocks:[...current],sum,changes};
-    }
-
-    if(sum>target+tolerance) return null;
-
-    let best=null;
-
-    for(let i=start;i<blocks.length;i++){
-
-      current.push(blocks[i]);
-
-      const changes=countChanges(prevBlocks,current);
-      if(changes>=bestChanges){
-        current.pop();
-        continue;
-      }
-
-      const result=dfsSearch(
-        target,
-        blocks,
-        tolerance,
-        prevBlocks,
-        current,
-        sum+blocks[i],
-        i,
-        bestChanges
-      );
-
-      if(result){
-        best=result;
-        bestChanges=result.changes;
-      }
-
-      current.pop();
-    }
-
-    return best;
-  }
-
-  function countChanges(prev,next){
-    const p=[...prev];
-    let changes=0;
-    next.forEach(b=>{
-      const i=p.indexOf(b);
-      if(i!==-1) p.splice(i,1);
-      else changes++;
-    });
-    return changes+p.length;
+    return null;
   }
 
   function redrawResults(){
@@ -320,7 +378,7 @@ document.addEventListener("DOMContentLoaded", () => {
   applyLanguage(currentLang);
 
   // =======================
-  // Version Display（追加のみ）
+  // ★ Version Display 追加
   // =======================
 
   const versionTag = document.createElement("div");
@@ -330,5 +388,7 @@ document.addEventListener("DOMContentLoaded", () => {
   versionTag.style.fontSize = "11px";
   versionTag.style.opacity = "0.6";
   versionTag.style.pointerEvents = "none";
-  versionTag.textContent = "ver " + APP_VERSION;
+  versionTag.textContent = APP_VERSION;
   document.body.appendChild(versionTag);
+
+});
