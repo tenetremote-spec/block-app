@@ -1,10 +1,6 @@
-// RG Support 2 - Stable + Full Language Fix Version
+// RG Support 2 - Stable + Full Language + Block Sort Version
 
 document.addEventListener("DOMContentLoaded", () => {
-
-  // =======================
-  // Elements
-  // =======================
 
   const addBtn = document.querySelector(".add-btn");
   const input = document.querySelector(".length-input");
@@ -29,41 +25,78 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let currentLang = localStorage.getItem("rg2_lang") || "ja";
   let lastResults = [];
+  let blockSortDesc = true; // デフォルト降順（既存思想維持）
 
   // =======================
   // Language
   // =======================
 
   const translations = {
-    ja:{add:"追加",clear:"クリア",calculate:"計算",pin:"ピン",blocks:"ブロック",total:"合計",noSolution:"解なし",delete:"削除",toleranceDisplay:"許容誤差"},
-    en:{add:"Add",clear:"Clear",calculate:"Calculate",pin:"Pin",blocks:"Blocks",total:"Total",noSolution:"No solution",delete:"Delete",toleranceDisplay:"Tolerance"},
-    bn:{add:"যোগ",clear:"মুছুন",calculate:"হিসাব",pin:"পিন",blocks:"ব্লক",total:"মোট",noSolution:"সমাধান নেই",delete:"মুছুন",toleranceDisplay:"সহনশীলতা"}
+    ja:{
+      add:"追加",clear:"クリア",calculate:"計算",
+      pin:"ピン",blocks:"ブロック",total:"合計",
+      noSolution:"解なし",delete:"削除",
+      toleranceDisplay:"許容誤差",
+      settings:"設定",
+      save:"保存",
+      lengthPlaceholder:"寸法を入力",
+      blockPlaceholder:"ブロック寸法",
+      tolerancePlaceholder:"許容誤差",
+      sort:"ソート"
+    },
+    en:{
+      add:"Add",clear:"Clear",calculate:"Calculate",
+      pin:"Pin",blocks:"Blocks",total:"Total",
+      noSolution:"No solution",delete:"Delete",
+      toleranceDisplay:"Tolerance",
+      settings:"Settings",
+      save:"Save",
+      lengthPlaceholder:"Enter length",
+      blockPlaceholder:"Block size",
+      tolerancePlaceholder:"Tolerance",
+      sort:"Sort"
+    },
+    bn:{
+      add:"যোগ",clear:"মুছুন",calculate:"হিসাব",
+      pin:"পিন",blocks:"ব্লক",total:"মোট",
+      noSolution:"সমাধান নেই",delete:"মুছুন",
+      toleranceDisplay:"সহনশীলতা",
+      settings:"সেটিংস",
+      save:"সংরক্ষণ",
+      lengthPlaceholder:"মাত্রা লিখুন",
+      blockPlaceholder:"ব্লক মাত্রা",
+      tolerancePlaceholder:"সহনশীলতা",
+      sort:"সাজান"
+    }
   };
 
   function applyLanguage(lang){
-    currentLang=lang;
+    currentLang = lang;
     localStorage.setItem("rg2_lang",lang);
 
-    addBtn.textContent=translations[lang].add;
-    clearBtn.textContent=translations[lang].clear;
-    calcBtn.textContent=translations[lang].calculate;
+    addBtn.textContent = translations[lang].add;
+    clearBtn.textContent = translations[lang].clear;
+    calcBtn.textContent = translations[lang].calculate;
+    saveSettingsBtn.textContent = translations[lang].save;
+
+    input.placeholder = translations[lang].lengthPlaceholder;
+    blockInput.placeholder = translations[lang].blockPlaceholder;
+    toleranceInput.placeholder = translations[lang].tolerancePlaceholder;
 
     updateToleranceDisplay();
-    languageSelect.value=lang;
+    languageSelect.value = lang;
 
     refreshDeleteButtons();
     redrawResults();
   }
 
   function updateToleranceDisplay(){
-    let val = toleranceInput.value;
-    if(val === "") val = "0";
+    let val = toleranceInput.value || "0";
     toleranceDisplay.textContent =
       `${translations[currentLang].toleranceDisplay} : ±${val} mm`;
   }
 
   toleranceInput.addEventListener("input", updateToleranceDisplay);
-
   applyLanguage(currentLang);
 
   // =======================
@@ -115,8 +148,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if(saved){
       blockList.innerHTML="";
       JSON.parse(saved).forEach(b=>createBlockItem(b.value,b.checked));
-    }else{
-      saveBlocks();
+      sortBlocksUI();
     }
   }
 
@@ -128,7 +160,39 @@ document.addEventListener("DOMContentLoaded", () => {
     createBlockItem(v,true);
     blockInput.value="";
     saveBlocks();
+    sortBlocksUI();
   };
+
+  // =======================
+  // Block Sort (UIのみ)
+  // =======================
+
+  const sortBtn = document.createElement("button");
+  sortBtn.className="sort-btn";
+  blockList.parentElement.insertBefore(sortBtn,blockList);
+
+  sortBtn.onclick=()=>{
+    blockSortDesc=!blockSortDesc;
+    sortBlocksUI();
+  };
+
+  function sortBlocksUI(){
+    const items=[...document.querySelectorAll(".block-item")];
+
+    items.sort((a,b)=>{
+      const av=parseFloat(a.querySelector(".mono").textContent);
+      const bv=parseFloat(b.querySelector(".mono").textContent);
+      return blockSortDesc?bv-av:av-bv;
+    });
+
+    blockList.innerHTML="";
+    items.forEach(i=>blockList.appendChild(i));
+
+    sortBtn.textContent =
+      translations[currentLang].sort + " : " + (blockSortDesc?"↓":"↑");
+
+    saveBlocks();
+  }
 
   // =======================
   // Target UI
@@ -143,7 +207,6 @@ document.addEventListener("DOMContentLoaded", () => {
       <span class="mono">${v.toFixed(1)}</span>
       <button class="delete-btn">${translations[currentLang].delete}</button>
     `;
-
     li.querySelector(".delete-btn").onclick=()=>li.remove();
 
     targetList.appendChild(li);
@@ -163,19 +226,18 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   // =======================
-  // Calculation
+  // Calculation (既存思想維持)
   // =======================
 
   calcBtn.onclick=()=>{
-
     resultsContainer.innerHTML="";
     lastResults=[];
 
     const tolerance = parseFloat(toleranceInput.value);
-    const safeTolerance = isNaN(tolerance) ? 0 : tolerance;
+    const safeTolerance = isNaN(tolerance)?0:tolerance;
 
     const targets=getTargets().sort((a,b)=>b-a);
-    const blocks=getActiveBlocks();
+    const blocks=getActiveBlocks(); // 常に降順で計算
 
     let prevPin=3000;
 
@@ -207,7 +269,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return [...document.querySelectorAll(".block-item")]
       .filter(i=>i.querySelector("input").checked)
       .map(i=>parseFloat(i.querySelector(".mono").textContent))
-      .sort((a,b)=>b-a);
+      .sort((a,b)=>b-a); // ← 計算は常に降順
   }
 
   function findFast(target,blocks,tolerance,prevPin){
