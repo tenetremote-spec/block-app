@@ -8,7 +8,7 @@
   <!-- Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700&family=Noto+Sans+JP:wght@400;600;700&family=Noto+Sans+Bengali:wght@400;600;700&family=Noto+Sans+Mono:wght@400;600&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="style.css?v=3" />
+  <link rel="stylesheet" href="style.css?v=4" />
 </head>
 <body>
 
@@ -44,9 +44,7 @@
   <!-- RESULT -->
   <div class="result-section card">
     <h2>Results</h2>
-    <div class="results-container">
-      <!-- JSで出力 -->
-    </div>
+    <div class="results-container"></div>
   </div>
 
 </main>
@@ -77,18 +75,22 @@
     <div class="setting-group">
       <label>Pins (50mm pitch / Fixed)</label>
       <div class="pin-list">
-        <div class="pin-grid">
-          <!-- JSで生成 -->
-        </div>
+        <div class="pin-grid"></div>
       </div>
     </div>
 
     <!-- Blocks -->
     <div class="setting-group">
       <label>Blocks</label>
-      <div class="block-list">
 
-        <!-- 初期ブロック完全版 -->
+      <!-- Block Add Input（追加） -->
+      <div class="input-section" style="margin-bottom:10px;">
+        <input type="number" step="0.001" placeholder="Enter block size (mm)" class="block-input">
+        <button class="btn btn-secondary small add-block-btn">Add</button>
+      </div>
+
+      <div class="block-list">
+        <!-- 初回のみ使用される初期ブロック -->
         <div class="block-item"><span class="mono">1.005</span><input type="checkbox" checked><button class="delete-btn small">✕</button></div>
 
         <div class="block-item"><span class="mono">1.1</span><input type="checkbox" checked><button class="delete-btn small">✕</button></div>
@@ -115,10 +117,8 @@
         <div class="block-item"><span class="mono">30</span><input type="checkbox" checked><button class="delete-btn small">✕</button></div>
         <div class="block-item"><span class="mono">40</span><input type="checkbox" checked><button class="delete-btn small">✕</button></div>
         <div class="block-item"><span class="mono">50</span><input type="checkbox" checked><button class="delete-btn small">✕</button></div>
-
       </div>
 
-      <button class="btn btn-secondary small add-block-btn">Add Block</button>
     </div>
 
     <button class="btn btn-primary full save-settings-btn">Save</button>
@@ -126,6 +126,6 @@
   </div>
 </div>
 
-<script src="script.js?v=3"></script>
+<script src="script.js?v=4"></script>
 </body>
 </html>
