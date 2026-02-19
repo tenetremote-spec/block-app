@@ -1,4 +1,4 @@
-// RG Support 2 - FULL STABLE VERSION (All Features Integrated)
+// RG Support 2 - FINAL STABLE (A Base + Safe Sort + Full Language + Full Calc)
 
 document.addEventListener("DOMContentLoaded", () => {
 
@@ -48,14 +48,14 @@ document.addEventListener("DOMContentLoaded", () => {
       noSolution:"解なし",delete:"削除",
       toleranceDisplay:"許容誤差",
       settings:"設定",save:"保存",
-      lengthPlaceholder:"寸法を入力",
-      blockPlaceholder:"ブロック寸法",
-      tolerancePlaceholder:"許容誤差",
-      sort:"ソート",
       toleranceLabel:"許容誤差 (mm)",
       languageLabel:"言語",
       pinsLabel:"ピン (50mmピッチ / 固定)",
-      blocksLabel:"ブロック"
+      blocksLabel:"ブロック",
+      lengthPlaceholder:"寸法を入力",
+      blockPlaceholder:"ブロック寸法",
+      tolerancePlaceholder:"許容誤差",
+      sort:"ソート"
     },
     en:{
       add:"Add",clear:"Clear",calculate:"Calculate",
@@ -63,20 +63,20 @@ document.addEventListener("DOMContentLoaded", () => {
       noSolution:"No solution",delete:"Delete",
       toleranceDisplay:"Tolerance",
       settings:"Settings",save:"Save",
-      lengthPlaceholder:"Enter length",
-      blockPlaceholder:"Block size",
-      tolerancePlaceholder:"Tolerance",
-      sort:"Sort",
       toleranceLabel:"Tolerance (mm)",
       languageLabel:"Language",
       pinsLabel:"Pins (50mm pitch / Fixed)",
-      blocksLabel:"Blocks"
+      blocksLabel:"Blocks",
+      lengthPlaceholder:"Enter length",
+      blockPlaceholder:"Block size",
+      tolerancePlaceholder:"Tolerance",
+      sort:"Sort"
     }
   };
 
   function applyLanguage(lang){
     currentLang = lang;
-    localStorage.setItem("rg2_lang",lang);
+    localStorage.setItem("rg2_lang", lang);
 
     addBtn.textContent = translations[lang].add;
     clearBtn.textContent = translations[lang].clear;
@@ -97,10 +97,12 @@ document.addEventListener("DOMContentLoaded", () => {
     refreshDeleteButtons();
     redrawResults();
     updateSortButton();
+
+    languageSelect.value = lang;
   }
 
   function updateToleranceDisplay(){
-    let val = toleranceInput.value || "0";
+    const val = toleranceInput.value === "" ? "0" : toleranceInput.value;
     toleranceDisplay.textContent =
       `${translations[currentLang].toleranceDisplay} : ±${val} mm`;
   }
@@ -108,15 +110,21 @@ document.addEventListener("DOMContentLoaded", () => {
   toleranceInput.addEventListener("input", updateToleranceDisplay);
 
   // =======================
-  // Settings
+  // Settings (完全復活)
   // =======================
 
-  settingsBtn.onclick=()=>modal.classList.remove("hidden");
+  settingsBtn.onclick = () => modal.classList.remove("hidden");
 
-  saveSettingsBtn.onclick=()=>{
+  saveSettingsBtn.onclick = () => {
     applyLanguage(languageSelect.value);
     modal.classList.add("hidden");
   };
+
+  window.addEventListener("click", (e)=>{
+    if(e.target === modal){
+      modal.classList.add("hidden");
+    }
+  });
 
   document.addEventListener("keydown",(e)=>{
     if(e.key==="Escape") modal.classList.add("hidden");
@@ -134,15 +142,6 @@ document.addEventListener("DOMContentLoaded", () => {
     localStorage.setItem(BLOCK_STORAGE_KEY,JSON.stringify(blocks));
   }
 
-  function loadBlocks(){
-    const saved=localStorage.getItem(BLOCK_STORAGE_KEY);
-    if(!saved) return;
-
-    blockList.innerHTML="";
-    JSON.parse(saved).forEach(b=>createBlockItem(b.value,b.checked));
-    sortBlocksUI();
-  }
-
   function createBlockItem(value,checked=true){
     const div=document.createElement("div");
     div.className="block-item";
@@ -156,10 +155,17 @@ document.addEventListener("DOMContentLoaded", () => {
     blockList.appendChild(div);
   }
 
+  function loadBlocks(){
+    const saved=localStorage.getItem(BLOCK_STORAGE_KEY);
+    if(!saved) return;
+    blockList.innerHTML="";
+    JSON.parse(saved).forEach(b=>createBlockItem(b.value,b.checked));
+  }
+
   loadBlocks();
 
   // =======================
-  // Block Sort
+  // Block Sort（UIのみ）
   // =======================
 
   const sortBtn = document.createElement("button");
@@ -167,7 +173,7 @@ document.addEventListener("DOMContentLoaded", () => {
   blockList.parentNode.insertBefore(sortBtn, blockList);
 
   sortBtn.onclick=()=>{
-    blockSortDesc=!blockSortDesc;
+    blockSortDesc = !blockSortDesc;
     sortBlocksUI();
   };
 
@@ -191,8 +197,10 @@ document.addEventListener("DOMContentLoaded", () => {
       translations[currentLang].sort + " : " + (blockSortDesc?"↓":"↑");
   }
 
+  updateSortButton();
+
   // =======================
-  // Add Block
+  // Add Block（壊さない構成）
   // =======================
 
   addBlockBtn.onclick=()=>{
@@ -205,7 +213,7 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   // =======================
-  // Add Target
+  // Add Target（完全復活）
   // =======================
 
   addBtn.onclick=()=>{
@@ -236,7 +244,7 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   // =======================
-  // Calculation（核心ロジック）
+  // Calculation（設計思想維持）
   // =======================
 
   calcBtn.onclick=()=>{
@@ -267,15 +275,15 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   function getTargets(){
-    return [...targetList.querySelectorAll("li")]
+    return [...document.querySelectorAll(".target-list li")]
       .map(li=>parseFloat(li.querySelector(".mono").textContent));
   }
 
   function getActiveBlocks(){
-    return [...blockList.children]
+    return [...document.querySelectorAll(".block-item")]
       .filter(i=>i.querySelector("input").checked)
       .map(i=>parseFloat(i.querySelector(".mono").textContent))
-      .sort((a,b)=>b-a); // 計算は常に降順
+      .sort((a,b)=>b-a);
   }
 
   function findFast(target,blocks,tolerance,prevPin){
