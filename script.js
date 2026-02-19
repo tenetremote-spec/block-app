@@ -1,8 +1,64 @@
-// RG Support 2 - Basic Calculation Engine
+// RG Support 2 - Full Version
+
+// =======================
+// Element references
+// =======================
+
+const addBtn = document.querySelector(".add-btn");
+const input = document.querySelector(".length-input");
+const targetList = document.querySelector(".target-list");
+const clearBtn = document.querySelector(".clear-btn");
 
 const calcBtn = document.querySelector(".calc-btn");
 const resultsContainer = document.querySelector(".results-container");
 const toleranceInput = document.querySelector(".tolerance-input");
+
+const settingsBtn = document.querySelector(".settings-btn");
+const modal = document.querySelector(".modal");
+const saveSettingsBtn = document.querySelector(".save-settings-btn");
+
+// =======================
+// UI FUNCTIONS
+// =======================
+
+// Add target
+addBtn.addEventListener("click", () => {
+  const value = parseFloat(input.value);
+  if (isNaN(value)) return;
+
+  const li = document.createElement("li");
+  li.innerHTML = `
+    <span class="mono">${value.toFixed(1)}</span>
+    <button class="delete-btn">Delete</button>
+  `;
+
+  li.querySelector(".delete-btn").addEventListener("click", () => {
+    li.remove();
+  });
+
+  targetList.appendChild(li);
+  input.value = "";
+});
+
+// Clear all
+clearBtn.addEventListener("click", () => {
+  targetList.innerHTML = "";
+  resultsContainer.innerHTML = "";
+});
+
+// Open settings
+settingsBtn.addEventListener("click", () => {
+  modal.classList.remove("hidden");
+});
+
+// Save settings (close)
+saveSettingsBtn.addEventListener("click", () => {
+  modal.classList.add("hidden");
+});
+
+// =======================
+// CALCULATION
+// =======================
 
 calcBtn.addEventListener("click", () => {
   const targets = getTargets();
@@ -44,7 +100,6 @@ function calculateCombination(target, tolerance) {
     if (pin > target) continue;
 
     const remainder = target - pin;
-
     const blockResult = searchBlocks(remainder, blocks, tolerance);
 
     if (blockResult) {
@@ -60,7 +115,7 @@ function calculateCombination(target, tolerance) {
         };
       }
 
-      if (diff === 0) break; // perfect match
+      if (diff === 0) break;
     }
   }
 
