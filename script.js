@@ -1,9 +1,9 @@
-// RG Support 2 - FINAL COMPLETE STABLE (段取り最小絶対優先版)
+// RG Support 2 - FINAL COMPLETE STABLE (完全段取り最小探索版)
 
 document.addEventListener("DOMContentLoaded", () => {
 
   // =======================
-  // Elements
+  // Elements（変更なし）
   // =======================
 
   const addBtn = document.querySelector(".add-btn");
@@ -36,13 +36,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let currentLang = localStorage.getItem("rg2_lang") || "ja";
   let lastResults = [];
-  let blockSortDesc = true;
 
-  // 🔥 ここだけ追加（初期値0）
   toleranceInput.value = "0";
 
   // =======================
-  // Language
+  // Language（変更なし）
   // =======================
 
   const translations = {
@@ -85,10 +83,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   toleranceInput.addEventListener("input", updateToleranceDisplay);
-
-  // =======================
-  // 以下すべて前回コードと完全同一（計算含む）
-  // =======================
 
   settingsBtn.onclick = () => modal.classList.remove("hidden");
   saveSettingsBtn.onclick = () => {
@@ -147,7 +141,9 @@ document.addEventListener("DOMContentLoaded", () => {
     lastResults=[];
   };
 
-  // ===== 計算部（前回と同一） =====
+  // =======================
+  // 🔥 完全段取り最小探索アルゴリズム
+  // =======================
 
   calcBtn.onclick=()=>{
 
@@ -200,7 +196,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function findOptimized(target,blocks,tolerance,prevPin,prevBlocks){
 
     let best=null;
-    let bestScore=Infinity;
+    let bestChanges=Infinity;
 
     for(let pin=prevPin;pin>=0;pin-=50){
 
@@ -208,62 +204,75 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const remainder=target-pin;
 
-      const candidates=generateCandidates(
+      const result=dfsSearch(
         remainder,
         blocks,
         tolerance,
-        prevBlocks
+        prevBlocks,
+        [],
+        0,
+        0,
+        bestChanges
       );
 
-      candidates.forEach(used=>{
+      if(result && result.changes<bestChanges){
+        bestChanges=result.changes;
+        best={
+          pin,
+          blocks:result.blocks,
+          total:pin+result.sum
+        };
+      }
 
-        const sum=used.reduce((a,b)=>a+b,0);
-        const error=Math.abs(sum-remainder);
-        if(error>tolerance) return;
-
-        const changes=countChanges(prevBlocks,used);
-        const score=(changes*10000)+(error*10)+used.length;
-
-        if(score<bestScore){
-          bestScore=score;
-          best={pin,blocks:used,total:pin+sum};
-        }
-      });
+      if(bestChanges===0) break;
     }
+
     return best;
   }
 
-  function generateCandidates(remainder,blocks,tolerance,prevBlocks){
+  function dfsSearch(target,blocks,tolerance,prevBlocks,current,sum,start,bestChanges){
 
-    const list=[];
+    const error=Math.abs(sum-target);
 
-    let sum=0;
-    let used=[];
-    prevBlocks.forEach(b=>{
-      if(sum+b<=remainder+tolerance){
-        sum+=b;
-        used.push(b);
+    if(error<=tolerance){
+      const changes=countChanges(prevBlocks,current);
+      return {blocks:[...current],sum,changes};
+    }
+
+    if(sum>target+tolerance) return null;
+
+    let best=null;
+
+    for(let i=start;i<blocks.length;i++){
+
+      current.push(blocks[i]);
+
+      const changes=countChanges(prevBlocks,current);
+      if(changes>=bestChanges){
+        current.pop();
+        continue;
       }
-    });
-    list.push([...used]);
 
-    sum=0; used=[];
-    blocks.forEach(b=>{
-      while(sum+b<=remainder+tolerance){
-        sum+=b; used.push(b);
+      const result=dfsSearch(
+        target,
+        blocks,
+        tolerance,
+        prevBlocks,
+        current,
+        sum+blocks[i],
+        i,
+        bestChanges
+      );
+
+      if(result){
+        best=result;
+        bestChanges=result.changes;
       }
-    });
-    list.push([...used]);
 
-    sum=0; used=[];
-    [...blocks].reverse().forEach(b=>{
-      while(sum+b<=remainder+tolerance){
-        sum+=b; used.push(b);
-      }
-    });
-    list.push([...used]);
+      current.pop();
+    }
 
-    return list;
+    return best;
   }
 
   function countChanges(prev,next){
@@ -307,6 +316,5 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   applyLanguage(currentLang);
-  updateToleranceDisplay();
 
 });
